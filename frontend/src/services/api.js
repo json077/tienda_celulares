@@ -20,6 +20,7 @@ const request = async (path, { body, token, ...options } = {}) => {
   if (!response.ok || data?.ok === false) {
     const error = new Error(data?.message || 'No se pudo completar la solicitud.')
     error.status = response.status
+    error.errores = data?.errores || []
     throw error
   }
   if (!data) throw new Error('El servidor devolvió una respuesta inválida.')
@@ -29,4 +30,6 @@ const request = async (path, { body, token, ...options } = {}) => {
 export const api = {
   post: (path, body, options) => request(path, { ...options, method: 'POST', body }),
   get: (path, options) => request(path, { ...options, method: 'GET' }),
+  put: (path, body, options) => request(path, { ...options, method: 'PUT', body }),
+  delete: (path, options) => request(path, { ...options, method: 'DELETE' }),
 }

@@ -20,6 +20,8 @@ import { useSelector } from 'react-redux'
 
 import { CSpinner, useColorModes } from '@coreui/react'
 import './scss/style.scss'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 // We use those styles to show code examples, you should remove them in your application.
 import './scss/examples.scss'
@@ -85,50 +87,54 @@ const App = () => {
 
   return (
     <HashRouter>
-      <Suspense
-        fallback={
-          <div className="pt-3 text-center">
-            <CSpinner color="primary" variant="grow" />
-          </div>
-        }
-      >
-        <Routes>
-          <Route exact path="/authentication/login" name="Login Page" element={<Login />} />
-          <Route
-            exact
-            path="/authentication/register"
-            name="Register Page"
-            element={<Register />}
-          />
-          <Route
-            exact
-            path="/authentication/check-email"
-            name="Check Email Page"
-            element={<CheckEmail />}
-          />
-          <Route
-            exact
-            path="/authentication/reset-password"
-            name="Reset Password Page"
-            element={<ResetPassword />}
-          />
-          <Route
-            exact
-            path="/authentication/change-password"
-            name="Change Password Page"
-            element={<ChangePassword />}
-          />
-          <Route
-            exact
-            path="/authentication/password-changed"
-            name="Password Changed Page"
-            element={<PasswordChanged />}
-          />
-          <Route exact path="/error-pages/404" name="Page 404" element={<Page404 />} />
-          <Route exact path="/error-pages/500" name="Page 500" element={<Page500 />} />
-          <Route path="*" name="Home" element={<DefaultLayout />} />
-        </Routes>
-      </Suspense>
+      <AuthProvider>
+        <Suspense
+          fallback={
+            <div className="pt-3 text-center">
+              <CSpinner color="primary" variant="grow" />
+            </div>
+          }
+        >
+          <Routes>
+            <Route exact path="/authentication/login" name="Login Page" element={<Login />} />
+            <Route
+              exact
+              path="/authentication/register"
+              name="Register Page"
+              element={<Register />}
+            />
+            <Route
+              exact
+              path="/authentication/check-email"
+              name="Check Email Page"
+              element={<CheckEmail />}
+            />
+            <Route
+              exact
+              path="/authentication/reset-password"
+              name="Reset Password Page"
+              element={<ResetPassword />}
+            />
+            <Route
+              exact
+              path="/authentication/change-password"
+              name="Change Password Page"
+              element={<ChangePassword />}
+            />
+            <Route
+              exact
+              path="/authentication/password-changed"
+              name="Password Changed Page"
+              element={<PasswordChanged />}
+            />
+            <Route exact path="/error-pages/404" name="Page 404" element={<Page404 />} />
+            <Route exact path="/error-pages/500" name="Page 500" element={<Page500 />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="*" name="Home" element={<DefaultLayout />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </AuthProvider>
     </HashRouter>
   )
 }

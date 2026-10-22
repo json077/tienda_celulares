@@ -18,16 +18,7 @@ export const productPayload = (product, includeStatus = false) => ({
   ...(includeStatus && { activo: Number(product.activo) === 1 }),
 })
 
-export const productErrorMessage = (error) => {
-  const context =
-    error.status === 401
-      ? 'Tu sesión no es válida o expiró. Cierra sesión e inicia sesión nuevamente.'
-      : error.status === 403
-        ? 'No tienes permisos para realizar esta operación.'
-        : ''
-  const details = (error.errores || []).map((item) => item.msg).filter(Boolean)
-  return [context, error.message, ...new Set(details)].filter(Boolean).join(' ')
-}
+export { apiErrorMessage as productErrorMessage } from './api'
 
 export const productService = {
   list: (signal) => api.get('/productos', options(signal)),

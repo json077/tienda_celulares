@@ -33,3 +33,14 @@ export const api = {
   put: (path, body, options) => request(path, { ...options, method: 'PUT', body }),
   delete: (path, options) => request(path, { ...options, method: 'DELETE' }),
 }
+
+export const apiErrorMessage = (error) => {
+  const context =
+    error.status === 401
+      ? 'Tu sesión no es válida o expiró. Cierra sesión e inicia sesión nuevamente.'
+      : error.status === 403
+        ? 'No tienes permisos para realizar esta operación.'
+        : ''
+  const details = (error.errores || []).map((item) => item.msg).filter(Boolean)
+  return [context, error.message, ...new Set(details)].filter(Boolean).join(' ')
+}

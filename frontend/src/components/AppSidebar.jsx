@@ -31,11 +31,10 @@ import {
   CSidebarToggler,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
+import { cilMobile } from '@coreui/icons'
+import { Link } from 'react-router-dom'
 
 import { AppSidebarNav } from './AppSidebarNav'
-
-import { logo } from 'src/assets/brand/logo'
-import { sygnet } from 'src/assets/brand/sygnet'
 
 // sidebar nav config
 import navigation from '../_nav'
@@ -69,11 +68,15 @@ const AppSidebar = () => {
       }}
     >
       <CSidebarHeader className="border-bottom">
-        <CSidebarBrand to="/">
-          <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+        <CSidebarBrand as={Link} to="/dashboard" aria-label="Tienda Celulares, inicio">
+          <span className="sidebar-brand-full">
+            <span className="d-block fw-semibold">Tienda Celulares</span>
+            <span className="d-block small">Inventario y Facturación</span>
+          </span>
+          <CIcon customClassName="sidebar-brand-narrow" icon={cilMobile} height={32} />
         </CSidebarBrand>
         <CCloseButton
+          aria-label="Cerrar menú lateral"
           className="d-lg-none"
           dark
           onClick={() => dispatch({ type: 'set', sidebarShow: false })}
@@ -82,6 +85,7 @@ const AppSidebar = () => {
       <AppSidebarNav items={navigation} />
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler
+          aria-label="Expandir o contraer menú lateral"
           onClick={() => dispatch({ type: 'set', sidebarUnfoldable: !unfoldable })}
         />
       </CSidebarFooter>

@@ -1,7 +1,6 @@
-import React from 'react'
+﻿import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  CAvatar,
-  CBadge,
   CDropdown,
   CDropdownDivider,
   CDropdownHeader,
@@ -9,84 +8,38 @@ import {
   CDropdownMenu,
   CDropdownToggle,
 } from '@coreui/react'
-import {
-  cilBell,
-  cilCreditCard,
-  cilCommentSquare,
-  cilEnvelopeOpen,
-  cilFile,
-  cilLockLocked,
-  cilSettings,
-  cilTask,
-  cilUser,
-} from '@coreui/icons'
+import { cilAccountLogout, cilUser } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
-
-import avatar8 from './../../assets/images/avatars/8.jpg'
+import { useAuth } from '../../contexts/AuthContext'
 
 const AppHeaderDropdown = () => {
+  const { usuario, logout } = useAuth()
+  const navigate = useNavigate()
+  const fullName = [usuario?.nombres, usuario?.apellidos].filter(Boolean).join(' ').trim()
+  const name = fullName || usuario?.username || 'Usuario'
+  const roles = usuario?.roles?.join(', ') || 'Sin roles asignados'
+
+  const handleLogout = () => {
+    logout()
+    navigate('/authentication/login', { replace: true })
+  }
+
   return (
     <CDropdown variant="nav-item">
-      <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
-        <CAvatar src={avatar8} size="md" />
+      <CDropdownToggle aria-label={`Menú de usuario: ${name}`}>
+        <CIcon icon={cilUser} className="me-2" />
+        <span className="d-none d-md-inline">{usuario?.username || name}</span>
       </CDropdownToggle>
-      <CDropdownMenu className="pt-0" placement="bottom-end">
-        <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>
-        <CDropdownItem href="#">
-          <CIcon icon={cilBell} className="me-2" />
-          Updates
-          <CBadge color="info" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilEnvelopeOpen} className="me-2" />
-          Messages
-          <CBadge color="success" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilTask} className="me-2" />
-          Tasks
-          <CBadge color="danger" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilCommentSquare} className="me-2" />
-          Comments
-          <CBadge color="warning" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownHeader className="bg-body-secondary fw-semibold my-2">Settings</CDropdownHeader>
-        <CDropdownItem href="#">
-          <CIcon icon={cilUser} className="me-2" />
-          Profile
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilSettings} className="me-2" />
-          Settings
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilCreditCard} className="me-2" />
-          Payments
-          <CBadge color="secondary" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilFile} className="me-2" />
-          Projects
-          <CBadge color="primary" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
+      <CDropdownMenu placement="bottom-end">
+        <CDropdownHeader className="text-wrap" style={{ maxWidth: '18rem' }}>
+          <div className="fw-semibold">{name}</div>
+          {fullName && <div className="small text-body-secondary">{usuario?.username}</div>}
+          <div className="small text-body-secondary">Roles: {roles}</div>
+        </CDropdownHeader>
         <CDropdownDivider />
-        <CDropdownItem href="#">
-          <CIcon icon={cilLockLocked} className="me-2" />
-          Lock Account
+        <CDropdownItem as="button" type="button" onClick={handleLogout}>
+          <CIcon icon={cilAccountLogout} className="me-2" />
+          Cerrar sesión
         </CDropdownItem>
       </CDropdownMenu>
     </CDropdown>

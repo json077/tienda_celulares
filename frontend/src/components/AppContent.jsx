@@ -40,7 +40,7 @@ import { routes } from '../routes'
 const AppContent = () => {
   return (
     <CContainer className="px-4" lg>
-      <Suspense fallback={<CSpinner color="primary" />}>
+      <Suspense fallback={<CSpinner color="primary" aria-label="Cargando página" />}>
         <Routes>
           {routes.map((route, idx) => {
             return (
@@ -55,7 +55,16 @@ const AppContent = () => {
               )
             )
           })}
-          <Route path="/" element={<Navigate to="dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="*"
+            element={
+              <div className="py-4">
+                <h1 className="h4">Página no encontrada</h1>
+                <p>Selecciona un módulo del menú para continuar.</p>
+              </div>
+            }
+          />
         </Routes>
       </Suspense>
     </CContainer>

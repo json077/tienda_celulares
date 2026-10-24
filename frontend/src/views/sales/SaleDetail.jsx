@@ -1,14 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {
-  CAlert,
-  CTable,
-  CTableHead,
-  CTableBody,
-  CTableRow,
-  CTableHeaderCell,
-  CTableDataCell,
-} from '@coreui/react'
+import { CAlert } from '@coreui/react'
+import PaymentsTable from '../cash/PaymentsTable'
 import SaleSummary from './SaleSummary'
 import { money } from './saleModel'
 
@@ -51,57 +44,7 @@ const SaleDetail = ({ sale, invoice, payments, warnings }) => (
       </p>
     )}
     <h5 className="mt-3">Pagos relacionados</h5>
-    {payments === null ? (
-      <p>Pagos no consultados. No se puede determinar el saldo.</p>
-    ) : (
-      <>
-        <CTable responsive>
-          <CTableHead>
-            <CTableRow>
-              {[
-                'ID / Fecha',
-                'Método / referencia',
-                'Moneda',
-                'Monto',
-                'Tipo de cambio',
-                'Monto base NIO',
-                'Estado / caja / usuario',
-              ].map((h) => (
-                <CTableHeaderCell key={h}>{h}</CTableHeaderCell>
-              ))}
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            {payments.map((p) => (
-              <CTableRow key={p.id_pago}>
-                <CTableDataCell>
-                  {p.id_pago} · {p.fecha}
-                </CTableDataCell>
-                <CTableDataCell>
-                  {p.metodo} · {p.referencia}
-                </CTableDataCell>
-                <CTableDataCell>{p.moneda}</CTableDataCell>
-                <CTableDataCell>{money(p.monto)}</CTableDataCell>
-                <CTableDataCell>{p.tipo_cambio}</CTableDataCell>
-                <CTableDataCell>{money(p.monto_base)}</CTableDataCell>
-                <CTableDataCell>
-                  {p.estado} · {p.id_sesion_caja || '—'} · {p.usuario}
-                </CTableDataCell>
-              </CTableRow>
-            ))}
-          </CTableBody>
-        </CTable>
-        {!payments.length && <p>No hay pagos registrados.</p>}
-        <p>
-          Pagado aplicado: C${' '}
-          {money(
-            payments
-              .filter((p) => p.estado === 'APLICADO')
-              .reduce((sum, p) => sum + Number(p.monto_base), 0),
-          )}
-        </p>
-      </>
-    )}
+    <PaymentsTable sale={sale} payments={payments} />
     <CAlert color="info">
       Confirmar no registra cobros ni abre caja. Los pagos y planes de crédito se gestionan mediante
       operaciones separadas del backend.

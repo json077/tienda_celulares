@@ -39,7 +39,11 @@ const Sales = () => {
   const [error, setError] = useState('')
   const [modalError, setModalError] = useState('')
   const [success, setSuccess] = useState('')
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() =>
+    typeof window === 'undefined'
+      ? ''
+      : new URLSearchParams(window.location.hash.split('?')[1] || '').get('buscar') || '',
+  )
   const [state, setState] = useState('')
   const [branch, setBranch] = useState('')
   const [type, setType] = useState('')

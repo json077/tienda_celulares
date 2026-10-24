@@ -20,7 +20,9 @@ const request = async (path, { body, token, ...options } = {}) => {
   if (!response.ok || data?.ok === false) {
     const error = new Error(data?.message || 'No se pudo completar la solicitud.')
     error.status = response.status
-    error.errores = data?.errores || []
+    error.errores =
+      data?.errores ||
+      (data?.errors || []).map((item) => ({ param: item.campo, msg: item.mensaje }))
     throw error
   }
   if (!data) throw new Error('El servidor devolvió una respuesta inválida.')

@@ -7,6 +7,7 @@ const Inventory = React.lazy(() => import('./views/inventory/Inventory'))
 const Customers = React.lazy(() => import('./views/customers/Customers'))
 const Suppliers = React.lazy(() => import('./views/suppliers/Suppliers'))
 const Purchases = React.lazy(() => import('./views/purchases/Purchases'))
+const Sales = React.lazy(() => import('./views/sales/Sales'))
 const ModulePlaceholder = React.lazy(() => import('./views/modules/ModulePlaceholder'))
 
 const pages = {
@@ -16,6 +17,7 @@ const pages = {
   '/clientes': Customers,
   '/proveedores': Suppliers,
   '/compras': Purchases,
+  '/ventas': Sales,
 }
 
 export const routes = [

@@ -1,0 +1,38 @@
+@media print {
+  body {
+    overflow: visible !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  #sale-invoice,
+  #sale-invoice * {
+    visibility: visible !important;
+  }
+  #sale-invoice {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    color: #000;
+    background: #fff;
+    padding: 12mm;
+  }
+  #sale-invoice .table-responsive {
+    overflow: visible !important;
+  }
+  #sale-invoice table {
+    width: 100%;
+  }
+  #sale-invoice tr {
+    break-inside: avoid;
+  }
+  .modal,
+  .modal-dialog,
+  .modal-content,
+  .modal-body {
+    position: static !important;
+    overflow: visible !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+}

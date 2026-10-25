@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import { validateProduct } from './productModel'
 import {
   CAlert,
   CButton,
@@ -47,14 +48,9 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
   const handleSubmit = (event) => {
     event.preventDefault()
     if (saving) return
-    if (!values.sku.trim() || values.nombre.trim().length < 2) {
-      setValidationError('El SKU es obligatorio y el nombre debe tener al menos 2 caracteres.')
-      return
-    }
-    if (!validCategory || !validBrand) {
-      setValidationError(
-        'Selecciona una categoría activa y una marca activa, o deja la marca vacía.',
-      )
+    const message = validateProduct(values, categories, brands)
+    if (message) {
+      setValidationError(message)
       return
     }
     setValidationError('')
@@ -173,7 +169,7 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
                 name="precio_venta"
                 type="number"
                 min={0}
-                step="0.01"
+                step="any"
                 value={values.precio_venta}
                 onChange={change}
                 required
@@ -206,7 +202,7 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
                 type="number"
                 min={0}
                 max={100}
-                step="0.01"
+                step="any"
                 value={values.porcentaje_descuento_maximo}
                 onChange={change}
                 disabled={!values.permite_descuento}
@@ -227,6 +223,17 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
             </CCol>
           </CRow>
         </fieldset>
+        <p className="small text-body-secondary mt-3" role="status">
+          {values.tipo_control === 'SERIALIZADO'
+            ? 'Serializado: los IMEI y unidades se registran en Compras e Inventario.'
+            : 'Cantidad: las existencias se administran en Compras e Inventario.'}
+        </p>
+        {product && values.tipo_control !== product.tipo_control && (
+          <CAlert color="warning">
+            Verifica el historial en Inventario antes de cambiar el control. La API no comprueba
+            compatibilidad con existencias anteriores.
+          </CAlert>
+        )}
         <p className="small text-body-secondary mt-3 mb-0">
           * Campos obligatorios.{' '}
           {product

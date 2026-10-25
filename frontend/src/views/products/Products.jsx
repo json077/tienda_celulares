@@ -8,6 +8,7 @@ import {
   CCol,
   CFormInput,
   CFormLabel,
+  CFormSelect,
   CModal,
   CModalBody,
   CModalFooter,
@@ -24,6 +25,7 @@ import {
 } from '@coreui/react'
 import { productErrorMessage, productService } from '../../services/productService'
 import ProductForm from './ProductForm'
+import { filterProducts } from './productModel'
 
 const priceFormat = new Intl.NumberFormat('es-NI', {
   minimumFractionDigits: 2,
@@ -36,6 +38,7 @@ const Products = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState({ category: '', brand: '', status: '', control: '' })
   const [operation, setOperation] = useState('')
   const [editor, setEditor] = useState(null)
   const [formError, setFormError] = useState('')
@@ -47,6 +50,8 @@ const Products = () => {
     return productService
       .list(signal)
       .then((response) => {
+        if (!Array.isArray(response.data))
+          throw new Error('El servidor devolvi? un listado inv?lido.')
         if (!signal?.aborted) setProducts(response.data)
       })
       .catch((error) => {
@@ -82,6 +87,8 @@ const Products = () => {
         productService.brands(),
         product ? productService.get(product.id_producto) : Promise.resolve(null),
       ])
+      if (!Array.isArray(categories.data) || !Array.isArray(brands.data))
+        throw new Error('Cat?logos inv?lidos.')
       setEditor({ product: detail?.data || null, categories: categories.data, brands: brands.data })
     } catch (error) {
       setError(productErrorMessage(error))
@@ -140,10 +147,15 @@ const Products = () => {
     }
   }
 
-  const query = search.trim().toLocaleLowerCase('es')
-  const filtered = products.filter((product) =>
-    [product.nombre, product.sku].some((value) => value.toLocaleLowerCase('es').includes(query)),
-  )
+  const filtered = filterProducts(products, { search, ...filters })
+  const categoryOptions = [
+    ...new Map(products.map((p) => [String(p.id_categoria), p.categoria])).entries(),
+  ]
+  const brandOptions = [
+    ...new Map(
+      products.filter((p) => p.id_marca != null).map((p) => [String(p.id_marca), p.marca]),
+    ).entries(),
+  ]
   const busy = loading || !!operation
   const statusAction = Number(statusProduct?.activo) === 1 ? 'Desactivar' : 'Activar'
 
@@ -197,6 +209,57 @@ const Products = () => {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </CCol>
+            {[
+              ['category', 'Categor?a', categoryOptions],
+              ['brand', 'Marca', [['none', 'Sin marca'], ...brandOptions]],
+              [
+                'status',
+                'Estado',
+                [
+                  ['1', 'Activo'],
+                  ['0', 'Inactivo'],
+                ],
+              ],
+              [
+                'control',
+                'Control',
+                [
+                  ['CANTIDAD', 'Cantidad'],
+                  ['SERIALIZADO', 'Serializado'],
+                ],
+              ],
+            ].map(([key, label, options]) => (
+              <CCol md={3} key={key}>
+                <CFormLabel htmlFor={'product-filter-' + key}>{label}</CFormLabel>
+                <CFormSelect
+                  id={'product-filter-' + key}
+                  value={filters[key]}
+                  onChange={(event) =>
+                    setFilters((current) => ({ ...current, [key]: event.target.value }))
+                  }
+                >
+                  <option value="">Todos</option>
+                  {options.map(([value, text]) => (
+                    <option key={value} value={value}>
+                      {text}
+                    </option>
+                  ))}
+                </CFormSelect>
+              </CCol>
+            ))}
+            <CCol xs={12} className="mt-2">
+              <CButton
+                color="secondary"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearch('')
+                  setFilters({ category: '', brand: '', status: '', control: '' })
+                }}
+              >
+                Limpiar filtros
+              </CButton>
+            </CCol>
           </CRow>
           {loading ? (
             <div className="text-center py-5" role="status">
@@ -236,7 +299,16 @@ const Products = () => {
                     <CTableRow key={product.id_producto}>
                       <CTableDataCell>{product.id_producto}</CTableDataCell>
                       <CTableDataCell>{product.sku}</CTableDataCell>
-                      <CTableDataCell>{product.nombre}</CTableDataCell>
+                      <CTableDataCell>
+                        <div>{product.nombre}</div>
+                        <div className="small text-body-secondary">{product.descripcion}</div>
+                        <div className="small text-body-secondary">
+                          Garant?a: {product.dias_garantia} d?as ? Descuento:{' '}
+                          {Number(product.permite_descuento) === 1
+                            ? product.porcentaje_descuento_maximo + '%'
+                            : 'No permitido'}
+                        </div>
+                      </CTableDataCell>
                       <CTableDataCell>{product.categoria}</CTableDataCell>
                       <CTableDataCell>{product.marca || 'Sin marca'}</CTableDataCell>
                       <CTableDataCell>

@@ -33,7 +33,9 @@ const ContactForm = ({ config, record, saving, error, onSave, onCancel }) => {
   const submit = (event) => {
     event.preventDefault()
     if (saving) return
-    const message = validateContact(config.fields, values)
+    const message = config.validate
+      ? config.validate(values)
+      : validateContact(config.fields, values)
     setValidationError(message)
     if (!message) onSave(values)
   }

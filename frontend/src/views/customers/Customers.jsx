@@ -1,12 +1,25 @@
 ﻿import React from 'react'
 import ContactDirectory from '../../components/contacts/ContactDirectory'
 import { customerService } from '../../services/customerService'
+import {
+  clientName,
+  clientList,
+  normalizeClient,
+  filterClients,
+  validateClient,
+} from './clientModel'
 
 export const customerConfig = {
   title: 'Clientes',
   singular: 'cliente',
   idKey: 'id_cliente',
-  displayName: (record) => [record.nombres, record.apellidos].filter(Boolean).join(' '),
+  displayName: clientName,
+  readList: clientList,
+  readRecord: normalizeClient,
+  filter: filterClients,
+  validate: validateClient,
+  stateFilter: true,
+  hideId: true,
   fields: [
     { name: 'tipo_identificacion', label: 'Tipo de identificación', maxLength: 30, required: true },
     { name: 'identificacion', label: 'Identificación', maxLength: 50, required: true },

@@ -9,6 +9,7 @@ import {
   CCol,
   CFormInput,
   CFormLabel,
+  CFormSelect,
   CModal,
   CModalBody,
   CModalFooter,
@@ -37,12 +38,108 @@ export const filterContacts = (records, config, search) => {
   )
 }
 
+export const ContactTable = ({ config, records, filtered, error, busy, onEdit, onStatus }) => (
+  <CTable responsive hover align="middle" className="mb-0">
+    <CTableHead>
+      <CTableRow>
+        {[
+          ...(config.hideId ? [] : ['ID']),
+          'Nombre',
+          'Identificación',
+          'Contacto',
+          'Dirección',
+          'Estado',
+          'Acciones',
+        ].map((title) => (
+          <CTableHeaderCell scope="col" key={title}>
+            {title}
+          </CTableHeaderCell>
+        ))}
+      </CTableRow>
+    </CTableHead>
+    <CTableBody>
+      {filtered.map((record) => (
+        <CTableRow key={record[config.idKey]}>
+          {!config.hideId && <CTableDataCell>{record[config.idKey]}</CTableDataCell>}
+          <CTableDataCell>{config.displayName(record)}</CTableDataCell>
+          <CTableDataCell>
+            <div>{record.identificacion || '—'}</div>
+            {record.tipo_identificacion && (
+              <div className="small text-body-secondary">{record.tipo_identificacion}</div>
+            )}
+          </CTableDataCell>
+          <CTableDataCell>
+            <div>{record.telefono || '—'}</div>
+            <div className="small text-body-secondary text-break">{record.email || '—'}</div>
+          </CTableDataCell>
+          <CTableDataCell>
+            <div className="text-break" style={{ minWidth: '10rem', maxWidth: '20rem' }}>
+              {record.direccion || '—'}
+            </div>
+          </CTableDataCell>
+          <CTableDataCell>
+            <CBadge color={Number(record.activo) === 1 ? 'success' : 'secondary'}>
+              {Number(record.activo) === 1 ? 'Activo' : 'Inactivo'}
+            </CBadge>
+          </CTableDataCell>
+          <CTableDataCell>
+            <div className="d-flex gap-2">
+              <CButton
+                color="primary"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => onEdit(record)}
+                aria-label={`Editar ${config.displayName(record)}`}
+              >
+                Editar
+              </CButton>
+              <CButton
+                color={Number(record.activo) === 1 ? 'warning' : 'success'}
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => onStatus(record)}
+                aria-label={`${Number(record.activo) === 1 ? 'Desactivar' : 'Activar'} ${config.displayName(record)}`}
+              >
+                {Number(record.activo) === 1 ? 'Desactivar' : 'Activar'}
+              </CButton>
+            </div>
+          </CTableDataCell>
+        </CTableRow>
+      ))}
+      {!filtered.length && (
+        <CTableRow>
+          <CTableDataCell colSpan={config.hideId ? 6 : 7} className="text-center py-4">
+            {error
+              ? 'No hay registros disponibles para mostrar.'
+              : records.length
+                ? 'No hay coincidencias para la búsqueda.'
+                : `No hay ${config.title.toLowerCase()} registrados.`}
+          </CTableDataCell>
+        </CTableRow>
+      )}
+    </CTableBody>
+  </CTable>
+)
+
+ContactTable.propTypes = {
+  config: PropTypes.object.isRequired,
+  records: PropTypes.array.isRequired,
+  filtered: PropTypes.array.isRequired,
+  error: PropTypes.string.isRequired,
+  busy: PropTypes.bool.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onStatus: PropTypes.func.isRequired,
+}
+
 const ContactDirectory = ({ config, service }) => {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('')
   const [operation, setOperation] = useState('')
   const [editor, setEditor] = useState(null)
   const [formError, setFormError] = useState('')
@@ -52,6 +149,7 @@ const ContactDirectory = ({ config, service }) => {
 
   const getRecord = async (id) => {
     const { data } = await service.get(id)
+    if (config.readRecord) return config.readRecord(data, id)
     if (!data || Number(data[config.idKey]) !== Number(id)) {
       throw new Error('El servidor devolvió un registro inválido. Actualiza el listado.')
     }
@@ -65,7 +163,11 @@ const ContactDirectory = ({ config, service }) => {
         .then((response) => {
           if (!Array.isArray(response.data))
             throw new Error('El servidor devolvió un listado inválido.')
-          if (!signal?.aborted) setRecords(response.data)
+          const rows = config.readList ? config.readList(response) : response.data
+          if (!signal?.aborted) {
+            setRecords(rows)
+            setError('')
+          }
         })
         .catch((error) => {
           if (!signal?.aborted) setError(apiErrorMessage(error))
@@ -73,7 +175,7 @@ const ContactDirectory = ({ config, service }) => {
         .finally(() => {
           if (!signal?.aborted) setLoading(false)
         }),
-    [service],
+    [service, config],
   )
 
   useEffect(() => {
@@ -157,7 +259,9 @@ const ContactDirectory = ({ config, service }) => {
     }
   }
 
-  const filtered = filterContacts(records, config, search)
+  const filtered = config.filter
+    ? config.filter(records, search, status)
+    : filterContacts(records, config, search)
   const busy = loading || !!operation
   const statusAction = Number(statusRecord?.activo) === 1 ? 'Desactivar' : 'Activar'
 
@@ -210,6 +314,35 @@ const ContactDirectory = ({ config, service }) => {
                 placeholder="Escribe para buscar"
               />
             </CCol>
+            {config.stateFilter && (
+              <>
+                <CCol md={4} lg={3}>
+                  <CFormLabel htmlFor={`${config.idKey}-state`}>Estado</CFormLabel>
+                  <CFormSelect
+                    id={`${config.idKey}-state`}
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    <option value="1">Activos</option>
+                    <option value="0">Inactivos</option>
+                  </CFormSelect>
+                </CCol>
+                <CCol xs={12} className="mt-2">
+                  <CButton
+                    color="secondary"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearch('')
+                      setStatus('')
+                    }}
+                  >
+                    Limpiar filtros
+                  </CButton>
+                </CCol>
+              </>
+            )}
           </CRow>
           {loading ? (
             <div className="text-center py-5" role="status">
@@ -224,98 +357,18 @@ const ContactDirectory = ({ config, service }) => {
                   API.
                 </p>
               )}
-              <CTable responsive hover align="middle" className="mb-0">
-                <CTableHead>
-                  <CTableRow>
-                    {[
-                      'ID',
-                      'Nombre',
-                      'Identificación',
-                      'Contacto',
-                      'Dirección',
-                      'Estado',
-                      'Acciones',
-                    ].map((title) => (
-                      <CTableHeaderCell scope="col" key={title}>
-                        {title}
-                      </CTableHeaderCell>
-                    ))}
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {filtered.map((record) => (
-                    <CTableRow key={record[config.idKey]}>
-                      <CTableDataCell>{record[config.idKey]}</CTableDataCell>
-                      <CTableDataCell>{config.displayName(record)}</CTableDataCell>
-                      <CTableDataCell>
-                        <div>{record.identificacion || '—'}</div>
-                        {record.tipo_identificacion && (
-                          <div className="small text-body-secondary">
-                            {record.tipo_identificacion}
-                          </div>
-                        )}
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div>{record.telefono || '—'}</div>
-                        <div className="small text-body-secondary text-break">
-                          {record.email || '—'}
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div
-                          className="text-break"
-                          style={{ minWidth: '10rem', maxWidth: '20rem' }}
-                        >
-                          {record.direccion || '—'}
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <CBadge color={Number(record.activo) === 1 ? 'success' : 'secondary'}>
-                          {Number(record.activo) === 1 ? 'Activo' : 'Inactivo'}
-                        </CBadge>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="d-flex gap-2">
-                          <CButton
-                            color="primary"
-                            variant="outline"
-                            size="sm"
-                            disabled={busy}
-                            onClick={() => openEditor(record)}
-                            aria-label={`Editar ${config.displayName(record)}`}
-                          >
-                            Editar
-                          </CButton>
-                          <CButton
-                            color={Number(record.activo) === 1 ? 'warning' : 'success'}
-                            variant="outline"
-                            size="sm"
-                            disabled={busy}
-                            onClick={() => {
-                              setStatusError('')
-                              setStatusRecord(record)
-                            }}
-                            aria-label={`${Number(record.activo) === 1 ? 'Desactivar' : 'Activar'} ${config.displayName(record)}`}
-                          >
-                            {Number(record.activo) === 1 ? 'Desactivar' : 'Activar'}
-                          </CButton>
-                        </div>
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))}
-                  {!filtered.length && (
-                    <CTableRow>
-                      <CTableDataCell colSpan={7} className="text-center py-4">
-                        {error
-                          ? 'No hay registros disponibles para mostrar.'
-                          : records.length
-                            ? 'No hay coincidencias para la búsqueda.'
-                            : `No hay ${config.title.toLowerCase()} registrados.`}
-                      </CTableDataCell>
-                    </CTableRow>
-                  )}
-                </CTableBody>
-              </CTable>
+              <ContactTable
+                config={config}
+                records={records}
+                filtered={filtered}
+                error={error}
+                busy={busy}
+                onEdit={openEditor}
+                onStatus={(record) => {
+                  setStatusError('')
+                  setStatusRecord(record)
+                }}
+              />
               <p className="small text-body-secondary mt-3 mb-0">
                 {filtered.length} de {records.length} registros.
               </p>

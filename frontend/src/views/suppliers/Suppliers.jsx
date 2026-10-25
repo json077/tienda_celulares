@@ -1,12 +1,19 @@
 ﻿import React from 'react'
 import ContactDirectory from '../../components/contacts/ContactDirectory'
 import { supplierService } from '../../services/supplierService'
+import { normalizeSupplier, supplierList, filterSuppliers, validateSupplier } from './supplierModel'
 
 export const supplierConfig = {
   title: 'Proveedores',
   singular: 'proveedor',
   idKey: 'id_proveedor',
   displayName: (record) => record.nombre,
+  readList: supplierList,
+  readRecord: normalizeSupplier,
+  filter: filterSuppliers,
+  validate: validateSupplier,
+  stateFilter: true,
+  hideId: true,
   fields: [
     {
       name: 'nombre',

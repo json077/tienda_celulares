@@ -127,13 +127,13 @@ test('Clientes CoreUI: carga, filtros, tabla, vacíos, formulario, errores y com
     assert.match(html, /Guardando/)
     assert.match(html, /value="000TEST"/)
     assert.match(html, /con confirmación/)
-    // Proveedores sigue utilizando los valores por defecto del componente compartido.
+    // Proveedores utiliza las opciones del directorio sin alterar Clientes.
     assert.match(render(Suppliers), /Cargando proveedores/)
-    assert.doesNotMatch(render(Suppliers), /id_proveedor-state/)
+    assert.match(render(Suppliers), /id_proveedor-state/)
     const supplier = { id_proveedor: 1, nombre: 'Proveedor prueba', activo: 1 }
     assert.equal(filterContacts([supplier], supplierConfig, 'prueba').length, 1)
     assert.notEqual(validateContact(supplierConfig.fields, {}), '')
-    assert.match(
+    assert.doesNotMatch(
       render(ContactTable, {
         ...props,
         config: supplierConfig,

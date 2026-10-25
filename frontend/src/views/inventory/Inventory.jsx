@@ -1,7 +1,6 @@
 ﻿import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
-  CBadge,
   CButton,
   CCard,
   CCardBody,
@@ -23,9 +22,19 @@ import {
 } from '@coreui/react'
 import { apiErrorMessage } from '../../services/api'
 import { inventoryService } from '../../services/inventoryService'
+import { useAuth } from '../../contexts/AuthContext'
 import InventoryTable from './InventoryTable'
 import InventoryOperationModal from './InventoryOperationModal'
-import { branchId, filterInventoryRows, formatInventoryDate, inventoryLabel } from './inventoryView'
+import InventoryMovementDetail from './InventoryMovementDetail'
+import { StockLevelBadge, UnitStateBadge } from './InventoryStatus'
+import {
+  branchId,
+  filterInventoryRows,
+  formatInventoryDate,
+  inventoryLabel,
+  inventoryRows,
+} from './inventoryView'
+import { validateInventoryOperation } from './inventoryOperation'
 
 const sections = [
   { key: 'stock', label: 'Existencias' },
@@ -33,9 +42,10 @@ const sections = [
   { key: 'movements', label: 'Movimientos' },
 ]
 const newDataset = () => ({ rows: [], loading: true, error: '' })
-const newFilters = () => ({ query: '', branch: '', product: '', type: '', state: '' })
+const newFilters = () => ({ query: '', branch: '', product: '', type: '', state: '', level: '' })
 
 const Inventory = () => {
+  const { usuario } = useAuth()
   const [active, setActive] = useState('stock')
   const [datasets, setDatasets] = useState({
     stock: newDataset(),
@@ -53,6 +63,11 @@ const Inventory = () => {
   const [success, setSuccess] = useState('')
   const [movement, setMovement] = useState(null)
   const pending = useRef(false)
+  const lifecycle = useRef(null)
+  const refreshing = useRef(new Set())
+  const [adjustDenied, setAdjustDenied] = useState(false)
+  const canAttemptAdjustment = usuario?.roles?.includes('ROOT') || !adjustDenied
+  const readBusy = Object.values(datasets).some((dataset) => dataset.loading)
 
   const loadSections = useCallback(
     (keys, signal) =>
@@ -60,12 +75,11 @@ const Inventory = () => {
         keys.map((key) =>
           inventoryService[key](signal)
             .then((response) => {
-              if (!Array.isArray(response.data))
-                throw new Error('El servidor devolvió un listado inválido.')
+              const rows = inventoryRows(response, key)
               if (!signal?.aborted) {
                 setDatasets((current) => ({
                   ...current,
-                  [key]: { rows: response.data, loading: false, error: '' },
+                  [key]: { rows, loading: false, error: '' },
                 }))
               }
             })
@@ -73,7 +87,12 @@ const Inventory = () => {
               if (!signal?.aborted) {
                 setDatasets((current) => ({
                   ...current,
-                  [key]: { ...current[key], loading: false, error: apiErrorMessage(error) },
+                  [key]: {
+                    ...current[key],
+                    ...([401, 403].includes(error.status) && { rows: [] }),
+                    loading: false,
+                    error: apiErrorMessage(error),
+                  },
                 }))
               }
             }),
@@ -84,11 +103,16 @@ const Inventory = () => {
 
   useEffect(() => {
     const controller = new AbortController()
+    lifecycle.current = controller
     loadSections(['stock', 'units', 'movements'], controller.signal)
     return () => controller.abort()
   }, [loadSections])
 
   const refresh = async (keys) => {
+    if (!lifecycle.current || lifecycle.current.signal.aborted) return
+    keys = keys.filter((key) => !refreshing.current.has(key))
+    if (!keys.length) return
+    keys.forEach((key) => refreshing.current.add(key))
     setDatasets((current) => {
       const next = { ...current }
       keys.forEach((key) => {
@@ -96,7 +120,11 @@ const Inventory = () => {
       })
       return next
     })
-    await loadSections(keys)
+    try {
+      await loadSections(keys, lifecycle.current.signal)
+    } finally {
+      keys.forEach((key) => refreshing.current.delete(key))
+    }
   }
 
   const openOperation = (kind, row) => {
@@ -106,23 +134,32 @@ const Inventory = () => {
   }
 
   const saveOperation = async (values) => {
-    if (pending.current) return
+    if (pending.current || !canAttemptAdjustment) return
     pending.current = true
     setSaving(true)
     setOperationError('')
     try {
+      const validation = validateInventoryOperation(operation.kind, operation.row, values)
+      if (validation) throw new Error(validation)
       const response =
         operation.kind === 'minimum'
           ? await inventoryService.setMinimum(operation.row, values.stock_minimo)
           : await inventoryService.adjust(operation.row, values)
+      if (lifecycle.current.signal.aborted) return
       setOperation(null)
       setSuccess(response.message)
       await refresh(['stock', 'movements'])
     } catch (error) {
-      setOperationError(apiErrorMessage(error))
+      if (!lifecycle.current.signal.aborted) {
+        if (error.status === 403) setAdjustDenied(true)
+        setOperationError(
+          apiErrorMessage(error) +
+            ' Si la respuesta se interrumpió, consulta existencias y movimientos antes de repetir la operación.',
+        )
+      }
     } finally {
       pending.current = false
-      setSaving(false)
+      if (!lifecycle.current.signal.aborted) setSaving(false)
     }
   }
 
@@ -160,11 +197,7 @@ const Inventory = () => {
       {
         key: 'stock_bajo',
         label: 'Nivel',
-        render: (row) => (
-          <CBadge color={Number(row.stock_bajo) === 1 ? 'warning' : 'success'}>
-            {Number(row.stock_bajo) === 1 ? 'Stock bajo' : 'Sobre el mínimo'}
-          </CBadge>
-        ),
+        render: (row) => <StockLevelBadge row={row} />,
       },
       {
         key: 'actions',
@@ -176,7 +209,7 @@ const Inventory = () => {
                 size="sm"
                 color="primary"
                 variant="outline"
-                disabled={saving || current.loading}
+                disabled={saving || readBusy || !!current.error || !canAttemptAdjustment}
                 onClick={() => openOperation('adjust', row)}
                 aria-label={`Ajustar ${row.producto} en ${row.sucursal}`}
               >
@@ -187,7 +220,7 @@ const Inventory = () => {
               size="sm"
               color="secondary"
               variant="outline"
-              disabled={saving || current.loading}
+              disabled={saving || readBusy || !!current.error || !canAttemptAdjustment}
               onClick={() => openOperation('minimum', row)}
               aria-label={`Stock mínimo de ${row.producto} en ${row.sucursal}`}
             >
@@ -223,19 +256,7 @@ const Inventory = () => {
       {
         key: 'estado',
         label: 'Estado',
-        render: (row) => (
-          <CBadge
-            color={
-              row.estado === 'DISPONIBLE'
-                ? 'success'
-                : row.estado === 'DEFECTUOSO'
-                  ? 'danger'
-                  : 'secondary'
-            }
-          >
-            {inventoryLabel(row.estado)}
-          </CBadge>
-        ),
+        render: (row) => <UnitStateBadge state={row.estado} />,
       },
       { key: 'id_detalle_compra', label: 'Detalle de compra de origen' },
     ],
@@ -274,6 +295,16 @@ const Inventory = () => {
       },
       { key: 'usuario', label: 'Usuario' },
       {
+        key: 'reference',
+        label: 'Referencia / origen',
+        render: (row) => (
+          <span>
+            {row.tipo_referencia || '—'}
+            {row.id_referencia != null ? ` #${row.id_referencia}` : ''}
+          </span>
+        ),
+      },
+      {
         key: 'detail',
         label: 'Detalle',
         render: (row) => (
@@ -302,8 +333,16 @@ const Inventory = () => {
         <CCardBody>
           <h1 className="h4">Inventario</h1>
           <p className="text-body-secondary">
-            Existencias por sucursal, dispositivos serializados e historial de movimientos.
+            Existencias por sucursal, dispositivos serializados e historial de movimientos. Usa
+            Actualizar después de confirmar compras, ventas, devoluciones o transferencias.
           </p>
+          {Object.entries(datasets)
+            .filter(([key, value]) => key !== active && value.error)
+            .map(([key, value]) => (
+              <CAlert color="warning" key={key}>
+                {sections.find((s) => s.key === key).label}: {value.error}
+              </CAlert>
+            ))}
           {success && (
             <CAlert color="success" role="status">
               {success}
@@ -349,7 +388,7 @@ const Inventory = () => {
                 {active === 'units' && (
                   <p className="small text-body-secondary">
                     Consulta de unidades individuales y su sucursal actual. Las entradas por compra
-                    se registran desde Compras.
+                    se registran desde Compras. Los IMEI y estados no se editan desde esta pantalla.
                   </p>
                 )}
                 <CRow className="g-3 mb-4">
@@ -357,7 +396,9 @@ const Inventory = () => {
                     <CFormLabel htmlFor="inventory-search">
                       {active === 'units'
                         ? 'Buscar IMEI, serie, producto o SKU'
-                        : 'Buscar producto o SKU'}
+                        : active === 'movements'
+                          ? 'Buscar producto, SKU o referencia'
+                          : 'Buscar producto o SKU'}
                     </CFormLabel>
                     <CFormInput
                       id="inventory-search"
@@ -406,7 +447,7 @@ const Inventory = () => {
                       </CFormSelect>
                     </CCol>
                   )}
-                  {active === 'movements' && (
+                  {['stock', 'units', 'movements'].includes(active) && (
                     <>
                       <CCol md={6} xl={3}>
                         <CFormLabel htmlFor="inventory-product">Producto</CFormLabel>
@@ -429,23 +470,51 @@ const Inventory = () => {
                           ))}
                         </CFormSelect>
                       </CCol>
-                      <CCol md={6} xl={3}>
-                        <CFormLabel htmlFor="inventory-type">Tipo</CFormLabel>
-                        <CFormSelect
-                          id="inventory-type"
-                          value={selection.type}
-                          onChange={(event) => updateFilter('type', event.target.value)}
-                        >
-                          <option value="">Todos los tipos</option>
-                          {[...new Set([...types, selection.type].filter(Boolean))].map((type) => (
-                            <option key={type} value={type}>
-                              {inventoryLabel(type)}
-                            </option>
-                          ))}
-                        </CFormSelect>
-                      </CCol>
+                      {active === 'movements' && (
+                        <CCol md={6} xl={3}>
+                          <CFormLabel htmlFor="inventory-type">Tipo</CFormLabel>
+                          <CFormSelect
+                            id="inventory-type"
+                            value={selection.type}
+                            onChange={(event) => updateFilter('type', event.target.value)}
+                          >
+                            <option value="">Todos los tipos</option>
+                            {[...new Set([...types, selection.type].filter(Boolean))].map(
+                              (type) => (
+                                <option key={type} value={type}>
+                                  {inventoryLabel(type)}
+                                </option>
+                              ),
+                            )}
+                          </CFormSelect>
+                        </CCol>
+                      )}
                     </>
                   )}
+                  {active === 'stock' && (
+                    <CCol md={6} xl={3}>
+                      <CFormLabel htmlFor="inventory-level">Nivel de stock</CFormLabel>
+                      <CFormSelect
+                        id="inventory-level"
+                        value={selection.level}
+                        onChange={(event) => updateFilter('level', event.target.value)}
+                      >
+                        <option value="">Todos los niveles</option>
+                        <option value="low">Stock bajo</option>
+                        <option value="normal">Sobre el mínimo</option>
+                        <option value="unknown">No disponible</option>
+                      </CFormSelect>
+                    </CCol>
+                  )}
+                  <CCol xs={12}>
+                    <CButton
+                      color="secondary"
+                      variant="outline"
+                      onClick={() => setFilters((old) => ({ ...old, [active]: newFilters() }))}
+                    >
+                      Limpiar filtros
+                    </CButton>
+                  </CCol>
                 </CRow>
                 {current.loading ? (
                   <div className="text-center py-5" role="status">
@@ -498,41 +567,7 @@ const Inventory = () => {
             Movimiento #{movement?.id_movimiento}
           </CModalTitle>
         </CModalHeader>
-        <CModalBody>
-          {movement && (
-            <dl className="mb-0">
-              <dt>Fecha</dt>
-              <dd>{formatInventoryDate(movement.fecha)}</dd>
-              <dt>Producto / SKU</dt>
-              <dd>
-                {movement.producto} · {movement.sku}
-              </dd>
-              <dt>Sucursal</dt>
-              <dd>{movement.sucursal}</dd>
-              <dt>Tipo y cantidad</dt>
-              <dd>
-                {inventoryLabel(movement.tipo)} · {movement.cantidad}
-              </dd>
-              <dt>Stock anterior → nuevo</dt>
-              <dd>
-                {movement.stock_anterior} → {movement.stock_nuevo}
-              </dd>
-              <dt>Unidad</dt>
-              <dd>{movement.id_unidad ?? '—'}</dd>
-              <dt>Referencia / origen</dt>
-              <dd>
-                {movement.tipo_referencia || '—'}
-                {movement.id_referencia != null ? ` #${movement.id_referencia}` : ''}
-              </dd>
-              <dt>Usuario</dt>
-              <dd>
-                {movement.usuario} (ID {movement.id_usuario})
-              </dd>
-              <dt>Observación</dt>
-              <dd className="text-break">{movement.observacion || '—'}</dd>
-            </dl>
-          )}
-        </CModalBody>
+        <CModalBody>{movement && <InventoryMovementDetail movement={movement} />}</CModalBody>
       </CModal>
     </>
   )

@@ -16,35 +16,14 @@ import {
   CSpinner,
 } from '@coreui/react'
 
-export const validateInventoryOperation = (kind, row, values) => {
-  if (kind === 'minimum') {
-    return values.stock_minimo === '' ||
-      !Number.isSafeInteger(Number(values.stock_minimo)) ||
-      Number(values.stock_minimo) < 0
-      ? 'El stock mínimo debe ser un entero mayor o igual a cero.'
-      : ''
-  }
-  if (row.tipo_control !== 'CANTIDAD')
-    return 'Los productos serializados se controlan por unidad/IMEI.'
-  if (!['ENTRADA', 'SALIDA'].includes(values.tipo)) return 'Selecciona entrada o salida.'
-  const amount = Number(values.cantidad)
-  if (!Number.isSafeInteger(amount) || amount < 1)
-    return 'La cantidad debe ser un entero mayor que cero.'
-  if (values.tipo === 'SALIDA' && amount > Number(row.stock_actual)) {
-    return 'La salida supera el stock consultado. Actualiza las existencias si el stock cambió.'
-  }
-  if (!values.observacion.trim() || values.observacion.trim().length > 500) {
-    return 'Indica un motivo de entre 1 y 500 caracteres.'
-  }
-  return ''
-}
+import { validateInventoryOperation } from './inventoryOperation'
 
 const InventoryOperationModal = ({ kind, row, saving, error, onConfirm, onClose }) => {
   const [values, setValues] = useState({
     tipo: 'ENTRADA',
     cantidad: '',
     observacion: '',
-    stock_minimo: row.stock_minimo,
+    stock_minimo: row.stock_minimo ?? '',
   })
   const [confirming, setConfirming] = useState(false)
   const [validationError, setValidationError] = useState('')

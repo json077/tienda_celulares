@@ -3,7 +3,7 @@ import { api, TOKEN_KEY } from './api'
 const options = (signal) => ({ token: localStorage.getItem(TOKEN_KEY), signal })
 export const openingPayload = (values) => ({
   id_caja: Number(values.id_caja),
-  monto_apertura: Number(values.monto_apertura),
+  monto_apertura: Number(values.monto_apertura ?? 0),
   observacion: values.observacion?.trim() || null,
 })
 export const closingPayload = (values) => ({

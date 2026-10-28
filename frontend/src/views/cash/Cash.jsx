@@ -24,11 +24,21 @@ import { cashService } from '../../services/cashService'
 import { paymentService } from '../../services/paymentService'
 import { saleService } from '../../services/saleService'
 import { listData, money } from '../sales/saleModel'
-import { dateTime, paymentBalance, positiveId, validateCash, validatePayment } from './cashModel'
+import { paymentBalance, positiveId, validatePayment } from './cashModel'
 import CashDetail from './CashDetail'
 import CashOperation from './CashOperation'
 import PaymentForm from './PaymentForm'
 import PaymentsTable from './PaymentsTable'
+import CashSessions from './CashSessions'
+import CashMovementResult from './CashMovementResult'
+import {
+  acquireCashOperation,
+  commitCashOperation,
+  normalizeCashSession,
+  normalizeCashMovement,
+  rememberCashSession,
+  cashBoxList,
+} from './cashSessionModel'
 
 const Cash = () => {
   const { usuario } = useAuth()
@@ -42,6 +52,8 @@ const Cash = () => {
   const [rate, setRate] = useState(null)
   const [receipt, setReceipt] = useState(null)
   const [movement, setMovement] = useState(null)
+  const [consultedSessions, setConsultedSessions] = useState([])
+  const [closeResult, setCloseResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -63,7 +75,7 @@ const Cash = () => {
       if (r.status === 'fulfilled') {
         try {
           const records = listData(r.value)
-          if (index === 0) setBoxes(records)
+          if (index === 0) setBoxes(cashBoxList(r.value))
           else setSales(records)
         } catch (e) {
           messages.push(`${label}: ${e.message}`)
@@ -86,8 +98,7 @@ const Cash = () => {
     return () => current.abort()
   }, [load])
   const run = async (permission, operation, writing = false) => {
-    if (pending.current) return
-    pending.current = true
+    if (!acquireCashOperation(pending)) return
     setBusy(true)
     setError('')
     setSuccess('')
@@ -117,15 +128,20 @@ const Cash = () => {
       e.permission = 'CAJA_VER'
       throw e
     }
-    if (!result?.id_sesion_caja) throw new Error('Respuesta de sesión inválida.')
-    return result
+    const record = normalizeCashSession(result, id)
+    if (alive()) setConsultedSessions((rows) => rememberCashSession(rows, record))
+    return record
   }
-  const lookupSession = () =>
+  const lookupSession = (id = sessionId) =>
     run('CAJA_VER', async () => {
       setSession(null)
       setMovement(null)
-      const record = await getSession(sessionId)
-      if (alive()) setSession(record)
+      setCloseResult(null)
+      const record = await getSession(id)
+      if (alive()) {
+        setSession(record)
+        setSessionId(String(record.id_sesion_caja))
+      }
     })
   const lookupSale = () =>
     run('read', async () => {
@@ -156,34 +172,55 @@ const Cash = () => {
     run(
       { open: 'CAJA_ABRIR', close: 'CAJA_CERRAR', movement: 'CAJA_MOVIMIENTO' }[mode],
       async () => {
-        let current = session
-        if (mode !== 'open') {
-          try {
-            current = await getSession(session.id_sesion_caja)
-          } catch (e) {
-            if (alive()) setSession(null)
-            throw e
-          }
-        }
-        if (!alive()) return
-        if (mode !== 'open') setSession(current)
-        validateCash(mode, values, current, boxes)
-        const response =
-          mode === 'open'
-            ? await cashService.open(values)
-            : mode === 'close'
-              ? await cashService.close(current.id_sesion_caja, values)
-              : await cashService.movement(current.id_sesion_caja, values)
-        if (!alive()) return
-        if (mode === 'movement') setMovement(response.data)
-        else {
-          const record = mode === 'close' ? response.data.sesion : response.data
-          setSession(record)
-          setSessionId(String(record.id_sesion_caja))
-          setMovement(null)
-        }
-        setSuccess(response.message || 'Operación completada.')
-        setMode('')
+        const updated = await commitCashOperation({
+          mode,
+          values,
+          session,
+          boxes,
+          service: cashService,
+          signal: controller.current.signal,
+          getSession: async (id) => {
+            try {
+              const current = await getSession(id)
+              if (alive()) setSession(current)
+              return current
+            } catch (e) {
+              if (alive()) setSession(null)
+              throw e
+            }
+          },
+          onCommitted: (response, current) => {
+            if (!alive()) return
+            setMode('')
+            setMovement(null)
+            setCloseResult(null)
+            setSuccess(response.message || 'Operación completada.')
+            if (mode === 'movement') {
+              setMovement(normalizeCashMovement(response.data, current.id_sesion_caja))
+              setCloseResult(null)
+            } else {
+              const record = normalizeCashSession(
+                mode === 'close' ? response.data?.sesion : response.data,
+              )
+              setSession(record)
+              setSessionId(String(record.id_sesion_caja))
+              setConsultedSessions((rows) => rememberCashSession(rows, record))
+              setMovement(null)
+              setCloseResult(mode === 'close' ? response.data.resumen : null)
+            }
+          },
+          onRefreshError: (e) => {
+            if (alive()) {
+              setSession(null)
+              setError(
+                apiErrorMessage(e) +
+                  ' La operación ya fue confirmada. Consulta la sesión antes de operar nuevamente.',
+              )
+              if (e.status === 403) setDenied((d) => ({ ...d, CAJA_VER: true }))
+            }
+          },
+        })
+        if (alive() && updated) setSession(updated)
       },
       true,
     )
@@ -233,7 +270,7 @@ const Cash = () => {
     <CCard>
       <CCardBody>
         <div className="d-flex flex-wrap justify-content-between gap-2 mb-3">
-          <h2>Caja y pagos</h2>
+          <h1 className="h4">Caja y pagos</h1>
           <CButton
             color="secondary"
             disabled={busy || loading}
@@ -278,7 +315,7 @@ const Cash = () => {
           <CTable responsive hover>
             <CTableHead>
               <CTableRow>
-                {['ID / código', 'Caja', 'Sucursal', 'Disponibilidad'].map((h) => (
+                {['Código', 'Caja', 'Sucursal', 'Disponibilidad'].map((h) => (
                   <CTableHeaderCell key={h}>{h}</CTableHeaderCell>
                 ))}
               </CTableRow>
@@ -286,14 +323,19 @@ const Cash = () => {
             <CTableBody>
               {boxes.map((b) => (
                 <CTableRow key={b.id_caja}>
-                  <CTableDataCell>
-                    {b.id_caja} / {b.codigo}
-                  </CTableDataCell>
+                  <CTableDataCell>{b.codigo}</CTableDataCell>
                   <CTableDataCell>{b.nombre}</CTableDataCell>
                   <CTableDataCell>{b.sucursal}</CTableDataCell>
                   <CTableDataCell>{Number(b.activo) === 1 ? 'Activa' : 'Inactiva'}</CTableDataCell>
                 </CTableRow>
               ))}
+              {!boxes.length && (
+                <CTableRow>
+                  <CTableDataCell colSpan={4}>
+                    No hay cajas disponibles en el catálogo consultado.
+                  </CTableDataCell>
+                </CTableRow>
+              )}
             </CTableBody>
           </CTable>
         )}
@@ -314,6 +356,7 @@ const Cash = () => {
         >
           Abrir caja
         </CButton>
+        <CashSessions sessions={consultedSessions} busy={busy} onSelect={lookupSession} />
         <CForm
           className="d-flex flex-wrap gap-2 mb-3"
           onSubmit={(e) => {
@@ -339,7 +382,7 @@ const Cash = () => {
         {session && (
           <>
             <CashDetail session={session} />
-            <div className="d-flex gap-2 mb-3">
+            <div className="d-flex flex-wrap gap-2 mb-3">
               <CButton
                 color="secondary"
                 disabled={busy || session.estado !== 'ABIERTA' || blocked('CAJA_MOVIMIENTO')}
@@ -363,13 +406,12 @@ const Cash = () => {
             </div>
           </>
         )}
-        {movement && (
-          <CAlert color="info">
-            Movimiento registrado #{movement.movimiento.id_movimiento_caja} ·{' '}
-            {movement.movimiento.tipo} · {dateTime(movement.movimiento.fecha)} ·{' '}
-            {movement.movimiento.concepto} · C$ {money(movement.movimiento.monto)}. Saldo anterior:
-            C$ {money(movement.saldo_anterior)} · Saldo posterior según servidor: C${' '}
-            {money(movement.saldo_actual)}. Corresponde al instante de ese movimiento.
+        {movement && <CashMovementResult result={movement} />}
+        {closeResult && (
+          <CAlert color="info" role="status">
+            Resultado de cierre confirmado por servidor: {closeResult.resultado} · Esperado C${' '}
+            {money(closeResult.monto_sistema)} · Contado C$ {money(closeResult.monto_real)} ·
+            Diferencia C$ {money(closeResult.diferencia)}.
           </CAlert>
         )}
         <hr />
@@ -460,6 +502,7 @@ const Cash = () => {
         )}
         <CModal
           visible={!!mode}
+          scrollable
           backdrop="static"
           keyboard={!busy}
           onClose={() => {

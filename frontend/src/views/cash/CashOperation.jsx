@@ -9,7 +9,8 @@ import {
   CFormTextarea,
   CFormCheck,
 } from '@coreui/react'
-import { validateCash } from './cashModel'
+import { dateTime, validateCash } from './cashModel'
+import { money } from '../sales/saleModel'
 
 const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
   const [values, setValues] = useState({
@@ -23,6 +24,12 @@ const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
   })
   const [checked, setChecked] = useState(false)
   const [error, setError] = useState('')
+  let invalid = ''
+  try {
+    validateCash(mode, values, session, boxes)
+  } catch (e) {
+    invalid = e.message
+  }
   const change = (e) => {
     setChecked(false)
     setValues({ ...values, [e.target.name]: e.target.value })
@@ -31,6 +38,7 @@ const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
     <CForm
       onSubmit={(e) => {
         e.preventDefault()
+        if (busy) return
         try {
           validateCash(mode, values, session, boxes)
           if (checked) {
@@ -44,6 +52,17 @@ const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
     >
       {error && <CAlert color="danger">{error}</CAlert>}
       <fieldset disabled={busy}>
+        {mode !== 'open' && session && (
+          <div className="border rounded p-3 mb-3">
+            <strong>
+              {session.caja} · {session.sucursal} · {session.estado}
+            </strong>
+            <p className="mb-0">
+              Sesión #{session.id_sesion_caja} · Cajero de apertura: {session.usuario_apertura} ·{' '}
+              {dateTime(session.fecha_apertura)} · Inicial NIO C$ {money(session.monto_apertura)}
+            </p>
+          </div>
+        )}
         {mode === 'open' && (
           <>
             <CFormSelect
@@ -110,8 +129,8 @@ const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
               value={values.tipo}
               onChange={change}
             >
-              <option>INGRESO</option>
-              <option>EGRESO</option>
+              <option value="INGRESO">ENTRADA (INGRESO)</option>
+              <option value="EGRESO">SALIDA (EGRESO)</option>
             </CFormSelect>
             <CFormInput
               className="mb-3"
@@ -144,16 +163,19 @@ const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
             onChange={change}
           />
         )}
+        {invalid && <p role="status">{invalid}</p>}
         <CFormCheck
+          id={`cash-${mode}-confirm`}
           className="mb-3"
           label="Revisé los datos y confirmo la operación"
           checked={checked}
+          disabled={busy || !!invalid}
           onChange={(e) => setChecked(e.target.checked)}
         />
         <CButton
           type="submit"
           color={mode === 'close' ? 'danger' : 'primary'}
-          disabled={busy || !checked}
+          disabled={busy || !checked || !!invalid}
         >
           {busy
             ? 'Procesando…'

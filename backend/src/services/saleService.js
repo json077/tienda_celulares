@@ -937,6 +937,18 @@ async function anularVenta(idVenta, idUsuario) {
     }
 
     // --------------------------------------------------------
+    // Validar devoluciones antes de cualquier reintegro. La venta ya está
+    // bloqueada, igual que en returnService.confirmarDevolucion.
+    // --------------------------------------------------------
+
+    if (await saleRepository.tieneDevolucionesConfirmadas(connection, idVenta)) {
+      throw crearError(
+        'La venta no puede anularse porque posee devoluciones CONFIRMADAS',
+        409
+      );
+    }
+
+    // --------------------------------------------------------
     // Validar pagos aplicados
     // --------------------------------------------------------
 

@@ -778,6 +778,19 @@ async function anularFactura(connection, idVenta) {
 // OBTENER TOTAL DE PAGOS APLICADOS DE UNA VENTA
 // ============================================================
 
+async function tieneDevolucionesConfirmadas(connection, idVenta) {
+  // Lectura actual: ve confirmaciones que terminaron mientras se esperaba
+  // el bloqueo de la venta, incluso bajo REPEATABLE READ.
+  const [rows] = await connection.query(
+    `SELECT id_devolucion FROM devoluciones
+     WHERE id_venta = ? AND estado = 'CONFIRMADA'
+     LIMIT 1 FOR UPDATE`,
+    [idVenta]
+  );
+
+  return rows.length > 0;
+}
+
 async function obtenerTotalPagosAplicados(connection, idVenta) {
   const [rows] = await connection.query(
     `
@@ -833,5 +846,6 @@ module.exports = {
   registrarMovimientoAnulacion,
   anularVenta,
   anularFactura,
-  obtenerTotalPagosAplicados
+  obtenerTotalPagosAplicados,
+  tieneDevolucionesConfirmadas
 };

@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/database');
+const repository = require('../repositories/authRepository');
 
 async function login(req, res) {
   try {
@@ -13,23 +13,14 @@ async function login(req, res) {
       });
     }
 
-    const [users] = await pool.query(
-      `SELECT id_usuario, username, email, nombres, apellidos,
-              password_hash, activo
-       FROM usuarios
-       WHERE username = ?
-       LIMIT 1`,
-      [username]
-    );
+    const user = await repository.buscarCredenciales(username);
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(401).json({
         ok: false,
         message: 'Credenciales incorrectas'
       });
     }
-
-    const user = users[0];
 
     if (!user.activo) {
       return res.status(403).json({
@@ -50,43 +41,30 @@ async function login(req, res) {
       });
     }
 
-    const [roles] = await pool.query(
-      `SELECT r.id_rol, r.nombre
-       FROM roles r
-       INNER JOIN usuario_roles ur ON ur.id_rol = r.id_rol
-       WHERE ur.id_usuario = ?`,
-      [user.id_usuario]
-    );
+    const sesion = await repository.obtenerSesion(user.id_usuario);
+    if (!sesion || !sesion.activo) {
+      return res.status(403).json({ ok: false, message: 'Usuario inactivo' });
+    }
+    const { id_usuario, username: nombreUsuario, email, nombres, apellidos, roles, permisos } = sesion;
+    const usuario = { id_usuario, username: nombreUsuario, email, nombres, apellidos, roles, permisos };
 
     const token = jwt.sign(
       {
         id_usuario: user.id_usuario,
-        username: user.username,
-        roles: roles.map(role => role.nombre)
+        username: usuario.username,
+        roles: usuario.roles
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
 
-    await pool.query(
-      `UPDATE usuarios
-       SET ultimo_acceso = NOW()
-       WHERE id_usuario = ?`,
-      [user.id_usuario]
-    );
+    await repository.registrarAcceso(user.id_usuario);
 
     return res.status(200).json({
       ok: true,
       message: 'Inicio de sesión correcto',
       token,
-      usuario: {
-        id_usuario: user.id_usuario,
-        username: user.username,
-        email: user.email,
-        nombres: user.nombres,
-        apellidos: user.apellidos,
-        roles: roles.map(role => role.nombre)
-      }
+      usuario
     });
 
   } catch (error) {

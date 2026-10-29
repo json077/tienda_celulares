@@ -17,6 +17,7 @@ function evento(metodo, ruta, modulo, accion, entidad, idRespuesta, campos = {},
   }).join('/');
   return Object.freeze({
     metodo, ruta, modulo, accion, entidad, idRespuesta,
+    transaccional: opciones.transaccional === true,
     idParametro: opciones.idParametro || null,
     sucursalRespuesta: opciones.sucursalRespuesta || null,
     campos: Object.freeze({ ...campos }),
@@ -26,6 +27,15 @@ function evento(metodo, ruta, modulo, accion, entidad, idRespuesta, campos = {},
 }
 
 const eventos = Object.freeze([
+  // Usuarios registra estos eventos dentro de su transacción, no tras la respuesta.
+  ...[
+    ['POST', '/api/usuarios', 'CREAR'],
+    ['PUT', '/api/usuarios/:idUsuario', 'EDITAR'],
+    ['PATCH', '/api/usuarios/:idUsuario/estado', 'ACTIVAR'],
+    ['PATCH', '/api/usuarios/:idUsuario/estado', 'DESACTIVAR'],
+    ['PUT', '/api/usuarios/:idUsuario/roles', 'ROLES']
+  ].map(([metodo, ruta, accion]) => evento(metodo, ruta, 'USUARIOS', accion, 'usuarios', 'id_usuario',
+    { id_usuario: 'id_usuario', activo: 'activo' }, { transaccional: true })),
   evento('POST', '/api/productos', 'PRODUCTOS', 'CREAR', 'productos', 'id_producto',
     { id_producto: 'id_producto', id_categoria: 'id_categoria', id_marca: 'id_marca',
       tipo_control: 'tipo_control', precio_venta: 'precio_venta', dias_garantia: 'dias_garantia', activo: 'activo' }),
@@ -108,6 +118,7 @@ const eventos = Object.freeze([
 
 function buscarEvento(metodo, ruta) {
   for (const definicion of eventos) {
+    if (definicion.transaccional) continue;
     if (definicion.metodo !== metodo) continue;
     const coincidencia = definicion.patron.exec(ruta);
     if (!coincidencia) continue;

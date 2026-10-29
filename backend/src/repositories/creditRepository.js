@@ -146,6 +146,7 @@ async function obtenerCreditoPorVenta(connection, idVenta) {
     FROM creditos
     WHERE id_venta = ?
     LIMIT 1
+    FOR UPDATE
     `,
     [idVenta]
   );

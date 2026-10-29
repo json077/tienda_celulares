@@ -80,6 +80,17 @@ async function registrarPago(datos, idUsuario) {
       );
     }
 
+    // La venta bloqueada serializa este control con crearCredito.
+    // Cualquier plan asociado, incluso ANULADO, exige usar Créditos.
+    const credito = await creditRepository.obtenerCreditoPorVenta(connection, idVenta);
+
+    if (credito) {
+      throw crearError(
+        'La venta tiene un plan de crédito asociado. Los abonos deben gestionarse desde el módulo Créditos mediante el pago de cuotas',
+        409
+      );
+    }
+
     // --------------------------------------------------------
     // 2. VALIDAR MONEDA Y DETERMINAR TIPO DE CAMBIO
     // --------------------------------------------------------

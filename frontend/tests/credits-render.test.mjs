@@ -17,7 +17,11 @@ test('Créditos CoreUI: carga, filtros, listado, detalle, cuotas, historial y co
   globalThis.fetch = () => {
     throw new Error('Prohibida API real')
   }
-  const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props))
+  const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
+  const render = (Component, props) =>
+    renderToStaticMarkup(
+      React.createElement(AuthProvider, null, React.createElement(Component, props)),
+    )
   try {
     const { default: Credits } = await server.ssrLoadModule('/src/views/credits/Credits.jsx')
     const { default: Detail, CreditTable } = await server.ssrLoadModule(
@@ -84,8 +88,9 @@ test('Créditos CoreUI: carga, filtros, listado, detalle, cuotas, historial y co
       render(CreditTable, { rows: [], busy: false, onOpen() {} }),
       /No hay créditos para mostrar/,
     )
-    const props = { credit, payments: [], historyError: '', busy: false, onPay() {} }
+    const props = { credit, payments: [], historyError: '', busy: false, mayPay: true, onPay() {} }
     html = render(Detail, props)
+    assert.doesNotMatch(render(Detail, { ...props, mayPay: false }), /Abonar cuota/)
     for (const text of [
       'Ana López',
       'V-TEST',

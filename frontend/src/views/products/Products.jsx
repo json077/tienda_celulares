@@ -25,6 +25,7 @@ import {
 } from '@coreui/react'
 import { productErrorMessage, productService } from '../../services/productService'
 import ProductForm from './ProductForm'
+import { useAuth } from '../../contexts/AuthContext'
 import { filterProducts } from './productModel'
 
 const priceFormat = new Intl.NumberFormat('es-NI', {
@@ -33,6 +34,7 @@ const priceFormat = new Intl.NumberFormat('es-NI', {
 })
 
 const Products = () => {
+  const { can } = useAuth()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -75,6 +77,7 @@ const Products = () => {
   }, [loadProducts])
 
   const openEditor = async (product = null) => {
+    if (!can(product ? 'PRODUCTOS_EDITAR' : 'PRODUCTOS_CREAR')) return
     if (pending.current) return
     pending.current = true
     setOperation('opening')
@@ -99,6 +102,7 @@ const Products = () => {
   }
 
   const saveProduct = async (values) => {
+    if (!can(editor.product ? 'PRODUCTOS_EDITAR' : 'PRODUCTOS_CREAR')) return
     if (pending.current) return
     pending.current = true
     setOperation('saving')
@@ -119,6 +123,8 @@ const Products = () => {
   }
 
   const changeStatus = async () => {
+    if (!can(Number(statusProduct?.activo) === 1 ? 'PRODUCTOS_ELIMINAR' : 'PRODUCTOS_EDITAR'))
+      return
     if (pending.current) return
     pending.current = true
     setOperation('status')
@@ -177,7 +183,11 @@ const Products = () => {
               >
                 Actualizar
               </CButton>
-              <CButton color="primary" disabled={busy} onClick={() => openEditor()}>
+              <CButton
+                color="primary"
+                disabled={busy || !can('PRODUCTOS_CREAR')}
+                onClick={() => openEditor()}
+              >
                 Nuevo producto
               </CButton>
             </div>
@@ -328,7 +338,7 @@ const Products = () => {
                             size="sm"
                             color="primary"
                             variant="outline"
-                            disabled={busy}
+                            disabled={busy || !can('PRODUCTOS_EDITAR')}
                             onClick={() => openEditor(product)}
                             aria-label={`Editar ${product.nombre}`}
                           >
@@ -338,10 +348,21 @@ const Products = () => {
                             size="sm"
                             color={Number(product.activo) === 1 ? 'warning' : 'success'}
                             variant="outline"
-                            disabled={busy}
+                            disabled={
+                              busy ||
+                              !can(
+                                Number(product.activo) === 1
+                                  ? 'PRODUCTOS_ELIMINAR'
+                                  : 'PRODUCTOS_EDITAR',
+                              )
+                            }
                             onClick={() => {
                               setStatusError('')
-                              setStatusProduct(product)
+                              can(
+                                Number(product.activo) === 1
+                                  ? 'PRODUCTOS_ELIMINAR'
+                                  : 'PRODUCTOS_EDITAR',
+                              ) && setStatusProduct(product)
                             }}
                             aria-label={`${Number(product.activo) === 1 ? 'Desactivar' : 'Activar'} ${product.nombre}`}
                           >
@@ -373,7 +394,7 @@ const Products = () => {
       </CCard>
 
       <CModal
-        visible={!!editor}
+        visible={!!editor && can(editor.product ? 'PRODUCTOS_EDITAR' : 'PRODUCTOS_CREAR')}
         size="lg"
         backdrop="static"
         keyboard={!operation}
@@ -401,7 +422,10 @@ const Products = () => {
       </CModal>
 
       <CModal
-        visible={!!statusProduct}
+        visible={
+          !!statusProduct &&
+          can(Number(statusProduct.activo) === 1 ? 'PRODUCTOS_ELIMINAR' : 'PRODUCTOS_EDITAR')
+        }
         backdrop="static"
         keyboard={!operation}
         onClose={() => {

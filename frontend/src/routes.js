@@ -13,6 +13,7 @@ const Credits = React.lazy(() => import('./views/credits/Credits'))
 const Transfers = React.lazy(() => import('./views/transfers/Transfers'))
 const Returns = React.lazy(() => import('./views/returns/Returns'))
 const Warranties = React.lazy(() => import('./views/warranties/Warranties'))
+const Users = React.lazy(() => import('./views/users/Users'))
 const ModulePlaceholder = React.lazy(() => import('./views/modules/ModulePlaceholder'))
 
 const pages = {
@@ -28,13 +29,16 @@ const pages = {
   '/transferencias': Transfers,
   '/devoluciones': Returns,
   '/garantias': Warranties,
+  '/usuarios-roles': Users,
 }
 
 export const routes = [
   { path: '/', name: 'Inicio' },
-  ...modules.map(({ path, name }) => ({
+  ...modules.map(({ path, name, permission, authenticatedOnly }) => ({
     path,
     name,
+    permission,
+    authenticatedOnly,
     element: pages[path] || ModulePlaceholder,
   })),
 ]

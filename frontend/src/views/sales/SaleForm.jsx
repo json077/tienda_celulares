@@ -11,6 +11,8 @@ import {
   CFormCheck,
 } from '@coreui/react'
 import SaleSummary from './SaleSummary'
+import { clearSaleSelections } from './saleAvailability'
+import { useSaleUnits } from './useSaleUnits'
 import {
   availableUnits,
   money,
@@ -21,7 +23,16 @@ import {
   validateLines,
 } from './saleModel'
 
-const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
+const noUnits = async () => []
+const SaleForm = ({
+  catalog,
+  saving,
+  error,
+  onSave,
+  onCancel,
+  canReadUnits = false,
+  loadUnits = noUnits,
+}) => {
   const [values, setValues] = useState({
     numero_venta: '',
     id_cliente: '',
@@ -37,6 +48,30 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
   const products = catalog.products.filter((p) => Number(p.activo) === 1)
   const clients = catalog.clients.filter((c) => Number(c.activo) === 1)
   const branches = [...new Map(catalog.stock.map((r) => [String(r.id_sucursal), r])).values()]
+  const serialProducts = [
+    ...new Set([
+      ...values.detalles
+        .filter((line) => line.tipo_control === 'SERIALIZADO')
+        .map((line) => String(line.id_producto)),
+      ...products
+        .filter(
+          (product) =>
+            String(product.id_producto) === productId && product.tipo_control === 'SERIALIZADO',
+        )
+        .map((product) => String(product.id_producto)),
+    ]),
+  ].sort()
+  const branch = values.id_sucursal
+  const scope = JSON.stringify([branch, productId, serialProducts])
+  const availability = useSaleUnits(scope, canReadUnits, loadUnits)
+  const units = availability.rows
+  const unitsBusy = serialProducts.length > 0 && availability.loading
+  const unitError =
+    catalog.unitError ||
+    availability.error ||
+    (!canReadUnits && products.some((p) => p.tipo_control === 'SERIALIZADO')
+      ? 'No tienes permiso para consultar dispositivos disponibles.'
+      : '')
   const set = (key, value) => setValues((old) => ({ ...old, [key]: value }))
   const update = (index, key, value) =>
     set(
@@ -46,8 +81,16 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
   const add = () => {
     const p = products.find((p) => String(p.id_producto) === productId)
     if (!p || values.detalles.some((l) => String(l.id_producto) === productId)) return
+    if (
+      p.tipo_control === 'SERIALIZADO' &&
+      (!canReadUnits ||
+        unitsBusy ||
+        unitError ||
+        !availableUnits(units, branch, p.id_producto).length)
+    )
+      return
     set('detalles', [
-      ...values.detalles,
+      ...clearSaleSelections(values.detalles),
       {
         ...p,
         producto: p.nombre,
@@ -73,7 +116,7 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
         subtotal: round(
           round(l.cantidad * round(l.precio_unitario)) - round(l.descuento) + round(l.impuesto),
         ),
-        unidades: catalog.units.filter((u) => l.selected.includes(String(u.id_unidad))),
+        unidades: units.filter((u) => l.selected.includes(String(u.id_unidad))),
       })),
     }
   }
@@ -91,7 +134,13 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
         values.observacion.trim().length > 500
       )
         throw new Error('Revisa número de venta y observación.')
-      validateLines(values, catalog.stock, catalog.units)
+      if (
+        values.detalles.some((line) => line.tipo_control === 'SERIALIZADO') &&
+        (unitsBusy || unitError || !canReadUnits)
+      ) {
+        throw new Error(unitError || 'Espera la consulta de dispositivos disponibles.')
+      }
+      validateLines(values, catalog.stock, units)
       setValidation('')
       setChecked(false)
       setReview(true)
@@ -110,10 +159,14 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
           inventario.
         </CAlert>
       )}
-      {catalog.unitError && (
+      {unitError && (
         <CAlert color="warning">
-          No se pueden vender serializados sin consultar unidades: {catalog.unitError}
+          No se pueden vender serializados sin consultar unidades: {unitError}
         </CAlert>
+      )}
+      {unitsBusy && <p role="status">Consultando dispositivos disponibles…</p>}
+      {!unitsBusy && serialProducts.length > 0 && !unitError && !units.length && (
+        <p>No hay dispositivos disponibles para la selección.</p>
       )}
       {review ? (
         <>
@@ -212,7 +265,10 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
               id="sale-product"
               disabled={!values.id_sucursal}
               value={productId}
-              onChange={(e) => setProductId(e.target.value)}
+              onChange={(e) => {
+                set('detalles', clearSaleSelections(values.detalles))
+                setProductId(e.target.value)
+              }}
             >
               <option value="">Selecciona producto</option>
               {products
@@ -227,9 +283,7 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
                     disabled={
                       Number(stockFor(catalog.stock, values.id_sucursal, p.id_producto) || 0) <=
                         0 ||
-                      (p.tipo_control === 'SERIALIZADO' &&
-                        (catalog.unitError ||
-                          !availableUnits(catalog.units, values.id_sucursal, p.id_producto).length))
+                      (p.tipo_control === 'SERIALIZADO' && !canReadUnits)
                     }
                   >
                     {p.sku} · {p.nombre} · {p.tipo_control} · Stock{' '}
@@ -237,7 +291,19 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
                   </option>
                 ))}
             </CFormSelect>
-            <CButton color="secondary" className="my-2" disabled={!productId} onClick={add}>
+            <CButton
+              color="secondary"
+              className="my-2"
+              disabled={
+                !productId ||
+                unitsBusy ||
+                (!!unitError &&
+                  products.some(
+                    (p) => String(p.id_producto) === productId && p.tipo_control === 'SERIALIZADO',
+                  ))
+              }
+              onClick={add}
+            >
               Agregar producto
             </CButton>
             {values.detalles.map((l, i) => (
@@ -274,6 +340,7 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
                     </CFormLabel>
                     <CFormSelect
                       id={`sale-units-${i}`}
+                      disabled={unitsBusy || !!unitError || !canReadUnits}
                       multiple
                       value={l.selected}
                       onChange={(e) =>
@@ -284,7 +351,7 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
                         )
                       }
                     >
-                      {availableUnits(catalog.units, values.id_sucursal, l.id_producto).map((u) => (
+                      {availableUnits(units, values.id_sucursal, l.id_producto).map((u) => (
                         <option key={u.id_unidad} value={u.id_unidad}>
                           {unitLabel(u)}
                         </option>
@@ -328,7 +395,7 @@ const SaleForm = ({ catalog, saving, error, onSave, onCancel }) => {
                   onClick={() =>
                     set(
                       'detalles',
-                      values.detalles.filter((_, index) => index !== i),
+                      clearSaleSelections(values.detalles.filter((_, index) => index !== i)),
                     )
                   }
                 >
@@ -367,5 +434,7 @@ SaleForm.propTypes = {
   error: PropTypes.string,
   onSave: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
+  canReadUnits: PropTypes.bool,
+  loadUnits: PropTypes.func,
 }
 export default SaleForm

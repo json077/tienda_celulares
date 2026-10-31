@@ -20,7 +20,9 @@
 
 import React, { Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { CContainer, CSpinner } from '@coreui/react'
+import { CAlert, CButton, CContainer, CSpinner } from '@coreui/react'
+import ProtectedRoute from './auth/ProtectedRoute'
+import { useAuth } from '../contexts/AuthContext'
 
 // routes config
 import { routes } from '../routes'
@@ -38,8 +40,19 @@ import { routes } from '../routes'
  * @returns {React.ReactElement} Content container with routed views
  */
 const AppContent = () => {
+  const { usuario, accessNotice, refreshSession } = useAuth()
+  // Dispose open forms and cached records when effective authorization changes.
+  const accessKey = JSON.stringify([usuario?.id_usuario, usuario?.roles, usuario?.permisos])
   return (
     <CContainer className="px-4" lg>
+      {accessNotice && (
+        <CAlert color="warning" role="alert">
+          {accessNotice}
+          <CButton color="secondary" size="sm" className="ms-2" onClick={refreshSession}>
+            Actualizar acceso
+          </CButton>
+        </CAlert>
+      )}
       <Suspense fallback={<CSpinner color="primary" aria-label="Cargando página" />}>
         <Routes>
           {routes.map((route, idx) => {
@@ -50,7 +63,11 @@ const AppContent = () => {
                   path={route.path}
                   exact={route.exact}
                   name={route.name}
-                  element={<route.element />}
+                  element={
+                    <ProtectedRoute module={route}>
+                      <route.element key={accessKey} />
+                    </ProtectedRoute>
+                  }
                 />
               )
             )

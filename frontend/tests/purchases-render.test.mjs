@@ -18,6 +18,7 @@ test('renderizado React/CoreUI: cantidad sin IMEI, serializados paginados, revis
     throw new Error('Esta prueba no debe acceder a la API real.')
   }
   try {
+    const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
     const { default: Confirmation } = await server.ssrLoadModule(
       '/src/views/purchases/PurchaseConfirmation.jsx',
     )
@@ -98,7 +99,9 @@ test('renderizado React/CoreUI: cantidad sin IMEI, serializados paginados, revis
     assert.match(html, /Se necesita al menos un proveedor y un producto activos/)
     assert.match(html, /Otra sucursal: indicar ID/)
     assert.match(html, /Revisar compra/)
-    html = renderToStaticMarkup(React.createElement(Purchases))
+    html = renderToStaticMarkup(
+      React.createElement(AuthProvider, null, React.createElement(Purchases)),
+    )
     assert.match(html, /Compras/)
     assert.match(html, /Cargando compras/)
     assert.match(html, /Nueva compra/)

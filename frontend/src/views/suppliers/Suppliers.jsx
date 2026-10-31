@@ -4,6 +4,11 @@ import { supplierService } from '../../services/supplierService'
 import { normalizeSupplier, supplierList, filterSuppliers, validateSupplier } from './supplierModel'
 
 export const supplierConfig = {
+  permissions: {
+    create: 'PROVEEDORES_CREAR',
+    edit: 'PROVEEDORES_EDITAR',
+    deactivate: 'PROVEEDORES_ELIMINAR',
+  },
   title: 'Proveedores',
   singular: 'proveedor',
   idKey: 'id_proveedor',

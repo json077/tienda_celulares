@@ -1,5 +1,34 @@
 const { pool } = require('../config/database');
 
+async function sucursalAutorizada(idUsuario, idSucursal) {
+  const [rows] = await pool.query(
+    `SELECT 1 AS autorizada
+     FROM usuario_sucursales us
+     INNER JOIN usuarios actor ON actor.id_usuario = us.id_usuario AND actor.activo = 1
+     INNER JOIN sucursales s ON s.id_sucursal = us.id_sucursal AND s.activo = 1
+     WHERE us.id_usuario = ? AND us.id_sucursal = ? LIMIT 1`,
+    [idUsuario, idSucursal]
+  );
+  return rows.length > 0;
+}
+
+async function obtenerDisponibles(idUsuario, idProducto, idSucursal) {
+  const [rows] = await pool.query(
+    `SELECT u.id_unidad, u.id_producto, u.id_sucursal_actual,
+            u.imei1, u.imei2, u.numero_serie
+     FROM unidades_producto u
+     INNER JOIN productos p ON p.id_producto = u.id_producto
+       AND p.activo = 1 AND p.tipo_control = 'SERIALIZADO'
+     INNER JOIN sucursales s ON s.id_sucursal = u.id_sucursal_actual AND s.activo = 1
+     INNER JOIN usuario_sucursales us ON us.id_sucursal = s.id_sucursal AND us.id_usuario = ?
+     INNER JOIN usuarios actor ON actor.id_usuario = us.id_usuario AND actor.activo = 1
+     WHERE u.id_producto = ? AND u.id_sucursal_actual = ? AND u.estado = 'DISPONIBLE'
+     ORDER BY u.id_unidad`,
+    [idUsuario, idProducto, idSucursal]
+  );
+  return rows;
+}
+
 /**
  * Obtiene una unidad serializada por su ID.
  */
@@ -293,6 +322,8 @@ async function registrarMovimiento(connection, datos) {
 }
 
 module.exports = {
+  sucursalAutorizada,
+  obtenerDisponibles,
   pool,
   obtenerPorId,
   obtenerTodas,

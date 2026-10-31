@@ -37,7 +37,8 @@ import { Link } from 'react-router-dom'
 import { AppSidebarNav } from './AppSidebarNav'
 
 // sidebar nav config
-import navigation from '../_nav'
+import navigationFor from '../_nav'
+import { useAuth } from '../contexts/AuthContext'
 
 /**
  * AppSidebar functional component
@@ -52,6 +53,7 @@ import navigation from '../_nav'
  * @returns {React.ReactElement} Sidebar with navigation
  */
 const AppSidebar = () => {
+  const { can } = useAuth()
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
@@ -82,7 +84,7 @@ const AppSidebar = () => {
           onClick={() => dispatch({ type: 'set', sidebarShow: false })}
         />
       </CSidebarHeader>
-      <AppSidebarNav items={navigation} />
+      <AppSidebarNav items={navigationFor(can)} />
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler
           aria-label="Expandir o contraer menú lateral"

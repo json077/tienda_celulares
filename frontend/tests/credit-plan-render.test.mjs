@@ -17,7 +17,11 @@ test('plan CoreUI: acción nueva, formulario, selección informativa, vacíos, e
   globalThis.fetch = () => {
     throw new Error('Prohibida API real')
   }
-  const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props))
+  const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
+  const render = (Component, props) =>
+    renderToStaticMarkup(
+      React.createElement(AuthProvider, null, React.createElement(Component, props)),
+    )
   try {
     const { default: Form, CreditPlanSale } = await server.ssrLoadModule(
       '/src/views/credits/CreditPlanForm.jsx',

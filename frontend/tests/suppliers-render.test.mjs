@@ -17,7 +17,11 @@ test('Proveedores CoreUI: carga, filtros, filas, vacíos, formulario y selecció
   globalThis.fetch = () => {
     throw new Error('No acceder a API real')
   }
-  const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props))
+  const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
+  const render = (Component, props) =>
+    renderToStaticMarkup(
+      React.createElement(AuthProvider, null, React.createElement(Component, props)),
+    )
   try {
     const { default: Suppliers, supplierConfig } = await server.ssrLoadModule(
       '/src/views/suppliers/Suppliers.jsx',
@@ -65,6 +69,8 @@ test('Proveedores CoreUI: carga, filtros, filas, vacíos, formulario y selecció
       },
     ]
     const props = {
+      canEdit: true,
+      canStatus: () => true,
       config: supplierConfig,
       records: rows,
       filtered: rows,

@@ -14,6 +14,7 @@ const {
 
 const {
   validarRegistroUnidad,
+  validarDisponibles,
   validarIdUnidad,
   manejarErroresValidacion
 } = require('../validators/serializedUnitValidator');
@@ -22,6 +23,15 @@ const router = express.Router();
 
 // Todas las rutas requieren autenticación.
 router.use(verificarToken);
+
+// Static route before /:idUnidad. Reading availability never grants IMEI registration.
+router.get(
+  '/disponibles',
+  verificarPermiso('IMEI_VER'),
+  validarDisponibles,
+  manejarErroresValidacion,
+  serializedUnitController.disponibles
+);
 
 // Listar todas las unidades serializadas.
 router.get(

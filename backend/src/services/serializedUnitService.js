@@ -2,6 +2,18 @@ const serializedUnitRepository = require(
   '../repositories/serializedUnitRepository'
 );
 
+async function unidadesDisponibles(idUsuario, idProducto, idSucursal) {
+  // Explicit membership is required for everyone, including ROOT. No assignments = no access.
+  if (!await serializedUnitRepository.sucursalAutorizada(idUsuario, idSucursal)) {
+    throw crearError('No tiene acceso a la sucursal solicitada', 403);
+  }
+  const unidades = await serializedUnitRepository.obtenerDisponibles(idUsuario, idProducto, idSucursal);
+  // Explicit public projection: do not leak administrative columns if the repository changes.
+  return unidades.map(({ id_unidad, id_producto, id_sucursal_actual, imei1, imei2, numero_serie }) => ({
+    id_unidad, id_producto, id_sucursal_actual, imei1, imei2, numero_serie
+  }));
+}
+
 async function listarUnidades() {
   return serializedUnitRepository.obtenerTodas();
 }
@@ -248,6 +260,7 @@ function crearError(message, status) {
 }
 
 module.exports = {
+  unidadesDisponibles,
   listarUnidades,
   obtenerUnidad,
   registrarUnidad

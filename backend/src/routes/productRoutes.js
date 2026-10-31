@@ -17,13 +17,13 @@ router.use(verificarToken);
 
 router.get(
   '/',
-  verificarPermiso('PRODUCTOS_VER'),
+  verificarPermiso('PRODUCTO_VER'),
   productController.listar
 );
 
 router.get(
   '/:id',
-  verificarPermiso('PRODUCTOS_VER'),
+  verificarPermiso('PRODUCTO_VER'),
   validarIdProducto,
   manejarErroresValidacion,
   productController.obtener

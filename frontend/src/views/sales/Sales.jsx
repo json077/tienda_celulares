@@ -29,10 +29,11 @@ import SaleDetail from './SaleDetail'
 import SaleSummary from './SaleSummary'
 import SaleConfirmation from './SaleConfirmation'
 import { listData, money, validateLines } from './saleModel'
+import { loadSaleUnits } from './saleAvailability'
 import './sales.css'
 
 const Sales = () => {
-  const { usuario } = useAuth()
+  const { usuario, can } = useAuth()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -59,6 +60,17 @@ const Sales = () => {
   const pending = useRef(false)
   const controller = useRef(null)
   const alive = () => controller.current && !controller.current.signal.aborted
+  const loadUnits = useCallback(
+    (branch, products, signal) => {
+      if (products.length && !can('IMEI_VER')) {
+        const error = new Error('No tienes permiso para consultar dispositivos disponibles.')
+        error.status = 403
+        return Promise.reject(error)
+      }
+      return loadSaleUnits(inventoryService, branch, products, signal)
+    },
+    [can],
+  )
   const load = useCallback(async (signal) => {
     try {
       const data = listData(await saleService.list(signal))
@@ -80,7 +92,24 @@ const Sales = () => {
     })
     return () => current.abort()
   }, [load])
+  const allowed = (action) => {
+    const requirements = {
+      list: ['VENTA_VER'],
+      detail: ['VENTA_VER'],
+      invoice: ['FACTURA_IMPRIMIR'],
+      catalog: ['VENTA_CREAR', 'PRODUCTO_VER', 'CLIENTE_VER', 'INVENTARIO_VER'],
+      create: ['VENTA_CREAR', 'INVENTARIO_VER'],
+      availability: ['VENTA_CONFIRMAR', 'INVENTARIO_VER'],
+      confirm: ['VENTA_CONFIRMAR'],
+      cancel: ['VENTA_ANULAR'],
+    }
+    return requirements[action]?.every(can) === true
+  }
   const run = async (action, operation) => {
+    if (!allowed(action)) {
+      setError('Acceso denegado. No tienes permiso para esta operación.')
+      return
+    }
     if (pending.current) return
     pending.current = true
     setBusy(true)
@@ -149,7 +178,6 @@ const Sales = () => {
         productService.list(signal),
         customerService.list(signal),
         inventoryService.stock(signal),
-        inventoryService.units(signal),
       ])
       if (!alive()) return
       const failures = result
@@ -164,8 +192,6 @@ const Sales = () => {
         products: listData(result[0].value),
         clients: listData(result[1].value),
         stock: listData(result[2].value),
-        units: result[3].status === 'fulfilled' ? listData(result[3].value) : [],
-        unitError: result[3].status === 'rejected' ? apiErrorMessage(result[3].reason) : '',
       })
       setMode('new')
     })
@@ -173,9 +199,11 @@ const Sales = () => {
     run('create', async () => {
       // Refresh availability immediately before writing; backend remains authoritative.
       const stock = listData(await inventoryService.stock(controller.current.signal))
-      const needsUnits = values.detalles.some((l) => l.tipo_control === 'SERIALIZADO')
-      const units = needsUnits
-        ? listData(await inventoryService.units(controller.current.signal))
+      const serialProducts = values.detalles
+        .filter((l) => l.tipo_control === 'SERIALIZADO')
+        .map((l) => l.id_producto)
+      const units = serialProducts.length
+        ? await loadUnits(values.id_sucursal, serialProducts, controller.current.signal)
         : []
       validateLines(values, stock, units)
       if (!alive()) return
@@ -200,14 +228,20 @@ const Sales = () => {
       const results = await Promise.allSettled([
         inventoryService.stock(signal),
         record.detalles.some((l) => l.tipo_control === 'SERIALIZADO')
-          ? inventoryService.units(signal)
-          : Promise.resolve({ data: [] }),
+          ? loadUnits(
+              record.id_sucursal,
+              record.detalles
+                .filter((l) => l.tipo_control === 'SERIALIZADO')
+                .map((l) => l.id_producto),
+              signal,
+            )
+          : Promise.resolve([]),
       ])
       const failure = results.find((r) => r.status === 'rejected')
       if (failure) throw failure.reason
       if (!alive()) return
       setSale(record)
-      setConfirmation({ stock: listData(results[0].value), units: listData(results[1].value) })
+      setConfirmation({ stock: listData(results[0].value), units: results[1].value })
       setMode('confirm')
     })
   const confirm = (units) =>
@@ -265,7 +299,11 @@ const Sales = () => {
             >
               Actualizar
             </CButton>
-            <CButton color="primary" disabled={busy || denied.create} onClick={openNew}>
+            <CButton
+              color="primary"
+              disabled={busy || denied.create || !allowed('catalog')}
+              onClick={openNew}
+            >
               Nueva venta
             </CButton>
           </div>
@@ -404,6 +442,8 @@ const Sales = () => {
             {mode === 'new' && catalog && (
               <SaleForm
                 catalog={catalog}
+                canReadUnits={can('IMEI_VER')}
+                loadUnits={loadUnits}
                 error={modalError}
                 saving={busy}
                 onSave={create}
@@ -417,7 +457,7 @@ const Sales = () => {
                   <CButton
                     className="me-2"
                     color="primary"
-                    disabled={busy || denied.confirm}
+                    disabled={busy || denied.confirm || !allowed('availability')}
                     onClick={prepareConfirm}
                   >
                     Revisar y confirmar
@@ -428,7 +468,7 @@ const Sales = () => {
                     <CButton
                       className="me-2"
                       color="primary"
-                      disabled={busy || denied.invoice}
+                      disabled={busy || denied.invoice || !allowed('invoice')}
                       onClick={print}
                     >
                       Ver / imprimir factura
@@ -436,10 +476,10 @@ const Sales = () => {
                     {!hasPayments && (
                       <CButton
                         color="danger"
-                        disabled={busy || denied.cancel}
+                        disabled={busy || denied.cancel || !allowed('cancel')}
                         onClick={() => {
                           setCancelChecked(false)
-                          setMode('cancel')
+                          if (allowed('cancel')) setMode('cancel')
                         }}
                       >
                         Anular venta

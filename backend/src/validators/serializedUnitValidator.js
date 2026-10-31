@@ -1,8 +1,27 @@
 const {
   body,
   param,
+  query,
   validationResult
 } = require('express-validator');
+
+const validarDisponibles = [
+  ...['id_producto', 'id_sucursal'].map(campo =>
+    query(campo).custom(valor => {
+      if (typeof valor !== 'string' || !/^[1-9]\d*$/.test(valor) ||
+          !Number.isSafeInteger(Number(valor))) {
+        throw new Error(`${campo} debe ser un entero positivo valido`);
+      }
+      return true;
+    })
+  ),
+  query().custom(valores => {
+    if (Object.keys(valores).some(campo => !['id_producto', 'id_sucursal'].includes(campo))) {
+      throw new Error('Solo se permiten id_producto e id_sucursal');
+    }
+    return true;
+  })
+];
 
 const validarRegistroUnidad = [
   body('id_producto')
@@ -64,6 +83,7 @@ function manejarErroresValidacion(req, res, next) {
 }
 
 module.exports = {
+  validarDisponibles,
   validarRegistroUnidad,
   validarIdUnidad,
   manejarErroresValidacion

@@ -18,20 +18,32 @@
 } from '@coreui/icons'
 
 export const modules = [
-  { path: '/dashboard', name: 'Dashboard', icon: cilSpeedometer },
-  { path: '/ventas', name: 'Ventas', icon: cilCart },
-  { path: '/compras', name: 'Compras', icon: cilBasket },
-  { path: '/inventario', name: 'Inventario', icon: cilStorage },
-  { path: '/productos', name: 'Productos', icon: cilMobile },
-  { path: '/clientes', name: 'Clientes', icon: cilPeople },
-  { path: '/proveedores', name: 'Proveedores', icon: cilTruck },
-  { path: '/creditos', name: 'Créditos', icon: cilCreditCard },
-  { path: '/caja', name: 'Caja', icon: cilCash },
-  { path: '/transferencias', name: 'Transferencias', icon: cilSwapHorizontal },
-  { path: '/devoluciones', name: 'Devoluciones', icon: cilActionUndo },
-  { path: '/garantias', name: 'Garantías', icon: cilShieldAlt },
+  // Dashboard is a static authenticated landing page; no backend query guard exists.
+  { path: '/dashboard', name: 'Dashboard', icon: cilSpeedometer, authenticatedOnly: true },
+  { path: '/ventas', name: 'Ventas', icon: cilCart, permission: 'VENTA_VER' },
+  { path: '/compras', name: 'Compras', icon: cilBasket, permission: 'COMPRAS_VER' },
+  { path: '/inventario', name: 'Inventario', icon: cilStorage, permission: 'INVENTARIO_VER' },
+  { path: '/productos', name: 'Productos', icon: cilMobile, permission: 'PRODUCTO_VER' },
+  { path: '/clientes', name: 'Clientes', icon: cilPeople, permission: 'CLIENTE_VER' },
+  { path: '/proveedores', name: 'Proveedores', icon: cilTruck, permission: 'PROVEEDORES_VER' },
+  { path: '/creditos', name: 'Créditos', icon: cilCreditCard, permission: 'CREDITOS_VER' },
+  { path: '/caja', name: 'Caja', icon: cilCash, permission: 'CAJA_VER' },
+  {
+    path: '/transferencias',
+    name: 'Transferencias',
+    icon: cilSwapHorizontal,
+    permission: 'TRANSFERENCIAS_VER',
+  },
+  {
+    path: '/devoluciones',
+    name: 'Devoluciones',
+    icon: cilActionUndo,
+    permission: 'DEVOLUCIONES_VER',
+  },
+  { path: '/garantias', name: 'Garantías', icon: cilShieldAlt, permission: 'GARANTIAS_VER' },
+  // No identifiable backend query guard: remain unavailable until explicitly defined.
   { path: '/reportes', name: 'Reportes', icon: cilChartLine },
-  { path: '/usuarios-roles', name: 'Usuarios y roles', icon: cilUser },
-  { path: '/respaldos', name: 'Respaldos', icon: cilSave },
+  { path: '/usuarios-roles', name: 'Usuarios y roles', icon: cilUser, permission: 'USUARIO_VER' },
+  { path: '/respaldos', name: 'Respaldos', icon: cilSave, permission: 'BACKUP_CREAR' },
   { path: '/configuracion', name: 'Configuración', icon: cilSettings },
 ]

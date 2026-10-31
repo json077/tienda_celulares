@@ -17,9 +17,12 @@ test('renderizado Productos y formulario CoreUI: carga, filtros, controles, erro
     throw new Error('Prohibida API real')
   }
   try {
+    const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
     const { default: Products } = await server.ssrLoadModule('/src/views/products/Products.jsx')
     const { default: Form } = await server.ssrLoadModule('/src/views/products/ProductForm.jsx')
-    let html = renderToStaticMarkup(React.createElement(Products))
+    let html = renderToStaticMarkup(
+      React.createElement(AuthProvider, null, React.createElement(Products)),
+    )
     for (const text of [
       'Cargando productos',
       'Nuevo producto',

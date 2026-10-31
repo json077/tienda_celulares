@@ -17,7 +17,11 @@ test('Clientes CoreUI: carga, filtros, tabla, vacíos, formulario, errores y com
   globalThis.fetch = () => {
     throw new Error('No acceder a API real')
   }
-  const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props))
+  const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
+  const render = (Component, props) =>
+    renderToStaticMarkup(
+      React.createElement(AuthProvider, null, React.createElement(Component, props)),
+    )
   try {
     const { default: Customers, customerConfig } = await server.ssrLoadModule(
       '/src/views/customers/Customers.jsx',
@@ -70,6 +74,8 @@ test('Clientes CoreUI: carga, filtros, tabla, vacíos, formulario, errores y com
       },
     ]
     const props = {
+      canEdit: true,
+      canStatus: () => true,
       config: customerConfig,
       records: rows,
       filtered: rows,

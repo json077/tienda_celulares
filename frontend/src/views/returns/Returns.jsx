@@ -41,7 +41,7 @@ import ReturnDetail, { ReturnFinancialNotice } from './ReturnDetail'
 import ReturnForm from './ReturnForm'
 
 const Returns = () => {
-  const { usuario } = useAuth()
+  const { can } = useAuth()
   const [rows, setRows] = useState([])
   const [sales, setSales] = useState([])
   const [saleId, setSaleId] = useState('')
@@ -59,7 +59,7 @@ const Returns = () => {
   const pending = useRef(false)
   const controller = useRef(null)
   const alive = () => controller.current && !controller.current.signal.aborted
-  const blocked = (permission) => !usuario?.roles?.includes('ROOT') && !!denied[permission]
+  const blocked = (permission) => !can(permission) || !!denied[permission]
   const noteError = useCallback((e, permission) => {
     setError(apiErrorMessage(e))
     if (e.status === 403) setDenied((d) => ({ ...d, [e.permission || permission]: true }))
@@ -89,6 +89,10 @@ const Returns = () => {
     return () => current.abort()
   }, [load])
   const run = async (permission, operation, writing = false) => {
+    if (blocked(permission)) {
+      setError('Acceso denegado. No tienes permiso para esta operación.')
+      return
+    }
     if (!acquireReturnOperation(pending)) return
     setBusy(true)
     setError('')
@@ -128,7 +132,8 @@ const Returns = () => {
       }
     })
   const openNew = () =>
-    run('VENTA_VER', async () => {
+    run('DEVOLUCIONES_CREAR', async () => {
+      if (blocked('VENTA_VER')) return
       const records = listData(await saleService.list(controller.current.signal))
       if (alive()) {
         setSales(eligibleSales(records))
@@ -427,7 +432,7 @@ const Returns = () => {
                       color="primary"
                       disabled={busy || blocked('DEVOLUCIONES_CONFIRMAR')}
                       onClick={() => {
-                        setMode('confirm')
+                        if (!blocked('DEVOLUCIONES_CONFIRMAR')) setMode('confirm')
                         setChecked(false)
                         setError('')
                       }}
@@ -438,7 +443,7 @@ const Returns = () => {
                       color="danger"
                       disabled={busy || blocked('DEVOLUCIONES_ANULAR')}
                       onClick={() => {
-                        setMode('cancel')
+                        if (!blocked('DEVOLUCIONES_ANULAR')) setMode('cancel')
                         setChecked(false)
                         setError('')
                       }}

@@ -2,6 +2,17 @@ const serializedUnitService = require(
   '../services/serializedUnitService'
 );
 
+async function disponibles(req, res) {
+  try {
+    const data = await serializedUnitService.unidadesDisponibles(
+      req.usuario.id_usuario, Number(req.query.id_producto), Number(req.query.id_sucursal)
+    );
+    return res.status(200).json({ ok: true, data });
+  } catch (error) {
+    return manejarError(res, error);
+  }
+}
+
 async function listar(req, res) {
   try {
     const unidades =
@@ -62,6 +73,7 @@ function manejarError(res, error) {
 }
 
 module.exports = {
+  disponibles,
   listar,
   obtenerPorId,
   registrar

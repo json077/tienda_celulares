@@ -47,7 +47,7 @@ import {
 } from './warrantyModel'
 
 const Warranties = () => {
-  const { usuario } = useAuth()
+  const { can } = useAuth()
   const [rows, setRows] = useState([])
   const [sales, setSales] = useState([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +68,7 @@ const Warranties = () => {
   const pending = useRef(false)
   const controller = useRef(null)
   const alive = () => controller.current && !controller.current.signal.aborted
-  const blocked = (p) => !usuario?.roles?.includes('ROOT') && !!denied[p]
+  const blocked = (permission) => !can(permission) || !!denied[permission]
   const noteError = useCallback((e, permission) => {
     setError(apiErrorMessage(e))
     if (e.status === 403) setDenied((d) => ({ ...d, [e.permission || permission]: true }))
@@ -109,6 +109,10 @@ const Warranties = () => {
     return () => current.abort()
   }, [load])
   const run = async (permission, operation, writing = false) => {
+    if (blocked(permission)) {
+      setError('Acceso denegado. No tienes permiso para esta operación.')
+      return
+    }
     if (!acquireWarrantyOperation(pending)) return
     setBusy(true)
     setError('')
@@ -171,7 +175,8 @@ const Warranties = () => {
       if (alive()) setMode('detail')
     })
   const openNew = () =>
-    run('VENTA_VER', async () => {
+    run('GARANTIAS_CREAR', async () => {
+      if (blocked('VENTA_VER')) return
       const data = listData(await saleService.list(controller.current.signal))
       if (alive()) {
         setSales(data)
@@ -248,7 +253,7 @@ const Warranties = () => {
       true,
     )
   const startClaim = () =>
-    run('GARANTIAS_VER', async () => {
+    run('GARANTIAS_RECLAMAR', async () => {
       await loadDetail(warranty.id_garantia)
       if (alive()) setMode('receive')
     })

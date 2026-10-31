@@ -41,7 +41,7 @@ import {
 } from './cashSessionModel'
 
 const Cash = () => {
-  const { usuario } = useAuth()
+  const { usuario, can } = useAuth()
   const [boxes, setBoxes] = useState([])
   const [sales, setSales] = useState([])
   const [session, setSession] = useState(null)
@@ -64,8 +64,7 @@ const Cash = () => {
   const pending = useRef(false)
   const controller = useRef(null)
   const alive = () => controller.current && !controller.current.signal.aborted
-  // Auth exposes roles, not effective permissions. The server decides each permission.
-  const blocked = (permission) => !usuario?.roles?.includes('ROOT') && !!denied[permission]
+  const blocked = (permission) => !can(permission) || !!denied[permission]
   const load = useCallback(async (signal) => {
     const results = await Promise.allSettled([cashService.list(signal), saleService.list(signal)])
     if (signal.aborted) return
@@ -98,6 +97,13 @@ const Cash = () => {
     return () => current.abort()
   }, [load])
   const run = async (permission, operation, writing = false) => {
+    if (
+      (permission === 'read' && (!can('VENTA_VER') || !can('PAGO_REGISTRAR'))) ||
+      (!['read', 'rate'].includes(permission) && blocked(permission))
+    ) {
+      setError('Acceso denegado. No tienes permiso para esta operación.')
+      return
+    }
     if (!acquireCashOperation(pending)) return
     setBusy(true)
     setError('')
@@ -351,7 +357,7 @@ const Cash = () => {
           }
           onClick={() => {
             setError('')
-            setMode('open')
+            if (!blocked('CAJA_ABRIR')) setMode('open')
           }}
         >
           Abrir caja
@@ -388,7 +394,7 @@ const Cash = () => {
                 disabled={busy || session.estado !== 'ABIERTA' || blocked('CAJA_MOVIMIENTO')}
                 onClick={() => {
                   setError('')
-                  setMode('movement')
+                  if (!blocked('CAJA_MOVIMIENTO')) setMode('movement')
                 }}
               >
                 Ingreso / egreso manual
@@ -398,7 +404,7 @@ const Cash = () => {
                 disabled={busy || session.estado !== 'ABIERTA' || blocked('CAJA_CERRAR')}
                 onClick={() => {
                   setError('')
-                  setMode('close')
+                  if (!blocked('CAJA_CERRAR')) setMode('close')
                 }}
               >
                 Cerrar caja
@@ -473,7 +479,7 @@ const Cash = () => {
                 onClick={() => {
                   setError('')
                   setRate(null)
-                  setMode('payment')
+                  if (!blocked('PAGO_REGISTRAR')) setMode('payment')
                 }}
               >
                 Registrar pago

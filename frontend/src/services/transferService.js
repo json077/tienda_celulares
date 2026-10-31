@@ -1,4 +1,4 @@
-import { TOKEN_KEY } from './api'
+import { authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
 
 export const transferPayload = (values) => ({
   numero_transferencia: values.numero_transferencia.trim(),
@@ -16,13 +16,15 @@ export const transferPayload = (values) => ({
 // Este controlador usa errors de express-validator y puede responder HTML por next(error).
 // No mostrar HTML, SQL ni stack traces del manejador predeterminado de Express.
 const request = async (path = '', method = 'GET', body, signal) => {
+  const token = localStorage.getItem(TOKEN_KEY)
+  const permission = authorizeRequest(`/transferencias${path}`, method, token)
   let response
   try {
     response = await fetch(`http://localhost:3000/api/transferencias${path}`, {
       method,
       signal,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
+        Authorization: `Bearer ${token}`,
         ...(body !== undefined && { 'Content-Type': 'application/json' }),
       },
       ...(body !== undefined && { body: JSON.stringify(body) }),
@@ -47,10 +49,12 @@ const request = async (path = '', method = 'GET', body, signal) => {
         'No se pudo completar la operación de transferencia.',
     )
     error.status = response.status
+    error.permission = permission
     error.errores =
       response.status < 500
         ? (data?.errors || []).map((item) => ({ msg: item.msg || item.mensaje }))
         : []
+    if (response.status === 403) reportAccessDenied(token)
     throw error
   }
   if (!data || data.ok !== true)

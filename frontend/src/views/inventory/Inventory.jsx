@@ -41,16 +41,21 @@ const sections = [
   { key: 'units', label: 'Dispositivos / IMEI' },
   { key: 'movements', label: 'Movimientos' },
 ]
-const newDataset = () => ({ rows: [], loading: true, error: '' })
+const sectionPermission = {
+  stock: 'INVENTARIO_VER',
+  units: 'IMEI_GESTIONAR',
+  movements: 'MOVIMIENTO_VER',
+}
+const newDataset = (loading = true) => ({ rows: [], loading, error: '' })
 const newFilters = () => ({ query: '', branch: '', product: '', type: '', state: '', level: '' })
 
 const Inventory = () => {
-  const { usuario } = useAuth()
+  const { can } = useAuth()
   const [active, setActive] = useState('stock')
   const [datasets, setDatasets] = useState({
-    stock: newDataset(),
-    units: newDataset(),
-    movements: newDataset(),
+    stock: newDataset(can(sectionPermission.stock)),
+    units: newDataset(can(sectionPermission.units)),
+    movements: newDataset(can(sectionPermission.movements)),
   })
   const [filters, setFilters] = useState({
     stock: newFilters(),
@@ -66,39 +71,41 @@ const Inventory = () => {
   const lifecycle = useRef(null)
   const refreshing = useRef(new Set())
   const [adjustDenied, setAdjustDenied] = useState(false)
-  const canAttemptAdjustment = usuario?.roles?.includes('ROOT') || !adjustDenied
+  const canAttemptAdjustment = can('INVENTARIO_AJUSTAR') && !adjustDenied
   const readBusy = Object.values(datasets).some((dataset) => dataset.loading)
 
   const loadSections = useCallback(
     (keys, signal) =>
       Promise.allSettled(
-        keys.map((key) =>
-          inventoryService[key](signal)
-            .then((response) => {
-              const rows = inventoryRows(response, key)
-              if (!signal?.aborted) {
-                setDatasets((current) => ({
-                  ...current,
-                  [key]: { rows, loading: false, error: '' },
-                }))
-              }
-            })
-            .catch((error) => {
-              if (!signal?.aborted) {
-                setDatasets((current) => ({
-                  ...current,
-                  [key]: {
-                    ...current[key],
-                    ...([401, 403].includes(error.status) && { rows: [] }),
-                    loading: false,
-                    error: apiErrorMessage(error),
-                  },
-                }))
-              }
-            }),
-        ),
+        keys
+          .filter((key) => can(sectionPermission[key]))
+          .map((key) =>
+            inventoryService[key](signal)
+              .then((response) => {
+                const rows = inventoryRows(response, key)
+                if (!signal?.aborted) {
+                  setDatasets((current) => ({
+                    ...current,
+                    [key]: { rows, loading: false, error: '' },
+                  }))
+                }
+              })
+              .catch((error) => {
+                if (!signal?.aborted) {
+                  setDatasets((current) => ({
+                    ...current,
+                    [key]: {
+                      ...current[key],
+                      ...([401, 403].includes(error.status) && { rows: [] }),
+                      loading: false,
+                      error: apiErrorMessage(error),
+                    },
+                  }))
+                }
+              }),
+          ),
       ),
-    [],
+    [can],
   )
 
   useEffect(() => {
@@ -110,7 +117,7 @@ const Inventory = () => {
 
   const refresh = async (keys) => {
     if (!lifecycle.current || lifecycle.current.signal.aborted) return
-    keys = keys.filter((key) => !refreshing.current.has(key))
+    keys = keys.filter((key) => can(sectionPermission[key]) && !refreshing.current.has(key))
     if (!keys.length) return
     keys.forEach((key) => refreshing.current.add(key))
     setDatasets((current) => {
@@ -128,6 +135,7 @@ const Inventory = () => {
   }
 
   const openOperation = (kind, row) => {
+    if (!canAttemptAdjustment) return
     setOperationError('')
     setSuccess('')
     setOperation({ kind, row })
@@ -348,13 +356,20 @@ const Inventory = () => {
               {success}
             </CAlert>
           )}
-          <CTabs activeItemKey={active} onChange={setActive}>
+          <CTabs
+            activeItemKey={active}
+            onChange={(key) => {
+              if (can(sectionPermission[key])) setActive(key)
+            }}
+          >
             <CTabList variant="tabs" aria-label="Secciones de inventario">
-              {sections.map(({ key, label }) => (
-                <CTab key={key} itemKey={key}>
-                  {label}
-                </CTab>
-              ))}
+              {sections
+                .filter((section) => can(sectionPermission[section.key]))
+                .map(({ key, label }) => (
+                  <CTab key={key} itemKey={key}>
+                    {label}
+                  </CTab>
+                ))}
             </CTabList>
             <CTabContent>
               <CTabPanel key={active} itemKey={active} transition={false} className="pt-4">

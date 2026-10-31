@@ -24,9 +24,13 @@ test('CoreUI: existencias, IMEI, estados, referencias, vacíos y pantalla de car
     const { default: Table } = await load('InventoryTable.jsx')
     const { default: Detail } = await load('InventoryMovementDetail.jsx')
     const { StockLevelBadge, UnitStateBadge } = await load('InventoryStatus.jsx')
-    const { AuthProvider } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
+    const { AuthContext } = await server.ssrLoadModule('/src/contexts/AuthContext.jsx')
     let html = renderToStaticMarkup(
-      React.createElement(AuthProvider, null, React.createElement(Inventory)),
+      React.createElement(
+        AuthContext.Provider,
+        { value: { can: () => true } },
+        React.createElement(Inventory),
+      ),
     )
     for (const label of [
       'Inventario',

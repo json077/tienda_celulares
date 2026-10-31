@@ -13,6 +13,11 @@ export const minimumPayload = (minimum) => ({ stock_minimo: Number(minimum) })
 export const inventoryService = {
   stock: (signal) => api.get('/inventario', options(signal)),
   units: (signal) => api.get('/unidades', options(signal)),
+  availableUnits: (product, branch, signal) =>
+    api.get(
+      `/unidades/disponibles?${new URLSearchParams({ id_producto: String(product), id_sucursal: String(branch) })}`,
+      options(signal),
+    ),
   movements: (signal) => api.get('/inventario/movimientos', options(signal)),
   adjust: (row, values) =>
     api.post('/inventario/ajustes', adjustmentPayload(row, values), options()),

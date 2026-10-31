@@ -26,6 +26,7 @@ import {
 } from '@coreui/react'
 import { apiErrorMessage } from '../../services/api'
 import ContactForm from './ContactForm'
+import { useAuth } from '../../contexts/AuthContext'
 
 export const filterContacts = (records, config, search) => {
   const query = search.trim().toLocaleLowerCase('es')
@@ -38,7 +39,17 @@ export const filterContacts = (records, config, search) => {
   )
 }
 
-export const ContactTable = ({ config, records, filtered, error, busy, onEdit, onStatus }) => (
+export const ContactTable = ({
+  config,
+  records,
+  filtered,
+  error,
+  busy,
+  onEdit,
+  onStatus,
+  canEdit = false,
+  canStatus = () => false,
+}) => (
   <CTable responsive hover align="middle" className="mb-0">
     <CTableHead>
       <CTableRow>
@@ -88,7 +99,7 @@ export const ContactTable = ({ config, records, filtered, error, busy, onEdit, o
                 color="primary"
                 variant="outline"
                 size="sm"
-                disabled={busy}
+                disabled={busy || !canEdit}
                 onClick={() => onEdit(record)}
                 aria-label={`Editar ${config.displayName(record)}`}
               >
@@ -98,7 +109,7 @@ export const ContactTable = ({ config, records, filtered, error, busy, onEdit, o
                 color={Number(record.activo) === 1 ? 'warning' : 'success'}
                 variant="outline"
                 size="sm"
-                disabled={busy}
+                disabled={busy || !canStatus(record)}
                 onClick={() => onStatus(record)}
                 aria-label={`${Number(record.activo) === 1 ? 'Desactivar' : 'Activar'} ${config.displayName(record)}`}
               >
@@ -129,11 +140,16 @@ ContactTable.propTypes = {
   filtered: PropTypes.array.isRequired,
   error: PropTypes.string.isRequired,
   busy: PropTypes.bool.isRequired,
+  canEdit: PropTypes.bool,
+  canStatus: PropTypes.func,
   onEdit: PropTypes.func.isRequired,
   onStatus: PropTypes.func.isRequired,
 }
 
 const ContactDirectory = ({ config, service }) => {
+  const { can } = useAuth()
+  const statusAllowed = (record) =>
+    can(Number(record?.activo) === 1 ? config.permissions.deactivate : config.permissions.edit)
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -191,6 +207,7 @@ const ContactDirectory = ({ config, service }) => {
   }
 
   const openEditor = async (record = null) => {
+    if (!can(record ? config.permissions.edit : config.permissions.create)) return
     if (pending.current) return
     setError('')
     setSuccess('')
@@ -213,6 +230,7 @@ const ContactDirectory = ({ config, service }) => {
   }
 
   const saveRecord = async (values) => {
+    if (!can(editor.record ? config.permissions.edit : config.permissions.create)) return
     if (pending.current) return
     pending.current = true
     setOperation('saving')
@@ -233,6 +251,7 @@ const ContactDirectory = ({ config, service }) => {
   }
 
   const changeStatus = async () => {
+    if (!statusAllowed(statusRecord)) return
     if (pending.current) return
     pending.current = true
     setOperation('status')
@@ -280,7 +299,11 @@ const ContactDirectory = ({ config, service }) => {
               <CButton color="secondary" variant="outline" disabled={busy} onClick={refresh}>
                 Actualizar
               </CButton>
-              <CButton color="primary" disabled={busy} onClick={() => openEditor()}>
+              <CButton
+                color="primary"
+                disabled={busy || !can(config.permissions.create)}
+                onClick={() => openEditor()}
+              >
                 Nuevo {config.singular}
               </CButton>
             </div>
@@ -358,6 +381,8 @@ const ContactDirectory = ({ config, service }) => {
                 </p>
               )}
               <ContactTable
+                canEdit={can(config.permissions.edit)}
+                canStatus={statusAllowed}
                 config={config}
                 records={records}
                 filtered={filtered}
@@ -366,7 +391,7 @@ const ContactDirectory = ({ config, service }) => {
                 onEdit={openEditor}
                 onStatus={(record) => {
                   setStatusError('')
-                  setStatusRecord(record)
+                  statusAllowed(record) && setStatusRecord(record)
                 }}
               />
               <p className="small text-body-secondary mt-3 mb-0">
@@ -378,7 +403,9 @@ const ContactDirectory = ({ config, service }) => {
       </CCard>
 
       <CModal
-        visible={!!editor}
+        visible={
+          !!editor && can(editor.record ? config.permissions.edit : config.permissions.create)
+        }
         size="lg"
         backdrop="static"
         keyboard={!operation}
@@ -405,7 +432,7 @@ const ContactDirectory = ({ config, service }) => {
       </CModal>
 
       <CModal
-        visible={!!statusRecord}
+        visible={!!statusRecord && statusAllowed(statusRecord)}
         backdrop="static"
         keyboard={!operation}
         onClose={() => {

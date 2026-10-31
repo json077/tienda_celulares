@@ -29,6 +29,7 @@ import { productService } from '../../services/productService'
 import { supplierService } from '../../services/supplierService'
 import { inventoryService } from '../../services/inventoryService'
 import PurchaseForm from './PurchaseForm'
+import { useAuth } from '../../contexts/AuthContext'
 import PurchaseSummary from './PurchaseSummary'
 import PurchaseConfirmation from './PurchaseConfirmation'
 import {
@@ -50,6 +51,8 @@ const listData = (response) => {
 }
 
 const Purchases = () => {
+  const { can } = useAuth()
+  const canCreate = ['COMPRAS_CREAR', 'PRODUCTO_VER', 'PROVEEDORES_VER'].every(can)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -100,6 +103,17 @@ const Purchases = () => {
   }
 
   const start = (name) => {
+    const permission = {
+      catalog: 'COMPRAS_CREAR',
+      create: 'COMPRAS_CREAR',
+      detail: 'COMPRAS_VER',
+      confirm: 'COMPRAS_CONFIRMAR',
+      cancel: 'COMPRAS_ANULAR',
+    }[name]
+    if (!permission || !can(permission)) {
+      setError('Acceso denegado. No tienes permiso para esta operación.')
+      return false
+    }
     if (pending.current) return false
     pending.current = true
     setOperation(name)
@@ -113,7 +127,7 @@ const Purchases = () => {
   }
 
   const openNew = async () => {
-    if (!start('catalog')) return
+    if (!canCreate || !start('catalog')) return
     setError('')
     const signal = controller.current.signal
     try {
@@ -275,7 +289,7 @@ const Purchases = () => {
               <CButton color="secondary" variant="outline" disabled={busy} onClick={refresh}>
                 Actualizar
               </CButton>
-              <CButton color="primary" disabled={busy} onClick={openNew}>
+              <CButton color="primary" disabled={busy || !canCreate} onClick={openNew}>
                 Nueva compra
               </CButton>
             </div>
@@ -573,7 +587,7 @@ const Purchases = () => {
                   (mode === 'cancel' ? (
                     <CButton
                       color="danger"
-                      disabled={!!operation || cancelText !== 'ANULAR'}
+                      disabled={!!operation || !can('COMPRAS_ANULAR') || cancelText !== 'ANULAR'}
                       onClick={() => changeState('cancel')}
                     >
                       {operation === 'cancel' && <CSpinner size="sm" className="me-2" />}Anular
@@ -584,8 +598,9 @@ const Purchases = () => {
                       <CButton
                         color="danger"
                         variant="outline"
-                        disabled={!!operation}
+                        disabled={!!operation || !can('COMPRAS_ANULAR')}
                         onClick={() => {
+                          if (!can('COMPRAS_ANULAR')) return
                           setMode('cancel')
                           setCancelText('')
                           setModalError('')
@@ -595,8 +610,9 @@ const Purchases = () => {
                       </CButton>
                       <CButton
                         color="primary"
-                        disabled={!!operation}
+                        disabled={!!operation || !can('COMPRAS_CONFIRMAR')}
                         onClick={() => {
+                          if (!can('COMPRAS_CONFIRMAR')) return
                           setMode('confirm')
                           setModalError('')
                         }}

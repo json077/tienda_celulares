@@ -82,7 +82,7 @@ CreditTable.propTypes = {
   onOpen: PropTypes.func.isRequired,
 }
 
-const CreditDetail = ({ credit, payments, historyError, busy, onPay }) => (
+const CreditDetail = ({ credit, payments, historyError, busy, onPay, mayPay = false }) => (
   <>
     <h2 className="h5">
       {credit.cliente} · {credit.numero_venta}
@@ -127,7 +127,7 @@ const CreditDetail = ({ credit, payments, historyError, busy, onPay }) => (
               <CBadge color={stateColor(q.estado)}>{q.estado}</CBadge>
             </CTableDataCell>
             <CTableDataCell>
-              {canPay(credit, q) && (
+              {mayPay && canPay(credit, q) && (
                 <CButton color="primary" size="sm" disabled={busy} onClick={() => onPay(q)}>
                   Abonar cuota {q.numero_cuota}
                 </CButton>
@@ -198,6 +198,7 @@ CreditDetail.propTypes = {
   payments: PropTypes.array,
   historyError: PropTypes.string.isRequired,
   busy: PropTypes.bool.isRequired,
+  mayPay: PropTypes.bool,
   onPay: PropTypes.func.isRequired,
 }
 export default CreditDetail

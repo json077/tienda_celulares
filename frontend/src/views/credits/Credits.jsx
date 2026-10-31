@@ -20,6 +20,7 @@ import { creditService } from '../../services/creditService'
 import { paymentService } from '../../services/paymentService'
 import { saleService } from '../../services/saleService'
 import { cashService } from '../../services/cashService'
+import { useAuth } from '../../contexts/AuthContext'
 import CreditDetail, { CreditTable } from './CreditDetail'
 import CreditPaymentForm from './CreditPaymentForm'
 import CreditPlanForm from './CreditPlanForm'
@@ -41,6 +42,8 @@ import {
 } from './creditModel'
 
 const Credits = () => {
+  const { can } = useAuth()
+  const canPlan = can('CREDITOS_CREAR') && can('VENTA_VER')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -133,6 +136,7 @@ const Credits = () => {
     })
   const openPayment = (q) =>
     perform(async () => {
+      if (!can('CREDITOS_PAGAR')) return
       setQuota(q)
       setRate(null)
       setSession(null)
@@ -176,6 +180,7 @@ const Credits = () => {
     })
   const pay = (values) =>
     perform(async () => {
+      if (!can('CREDITOS_PAGAR')) return
       const invalid = validateInstallment(values, detail, quota, rate, session, sale)
       if (invalid) {
         setPaymentError(invalid)
@@ -216,11 +221,13 @@ const Credits = () => {
   }
   const openPlan = () =>
     perform(async () => {
+      if (!canPlan) return
       setSuccess('')
       await loadPlanSales()
     })
   const savePlan = (values) =>
     perform(async () => {
+      if (!canPlan) return
       const invalid = validateCreditPlan(values, plan.sales)
       if (invalid) {
         setPlanError(invalid)
@@ -286,7 +293,7 @@ const Credits = () => {
               >
                 Actualizar
               </CButton>
-              <CButton color="primary" disabled={busy || loading} onClick={openPlan}>
+              <CButton color="primary" disabled={busy || loading || !canPlan} onClick={openPlan}>
                 Nuevo plan de crédito
               </CButton>
             </div>
@@ -358,7 +365,7 @@ const Credits = () => {
         </CCardBody>
       </CCard>
       <CModal
-        visible={!!plan}
+        visible={!!plan && canPlan}
         size="lg"
         scrollable
         backdrop="static"
@@ -453,6 +460,7 @@ const Credits = () => {
               />
             ) : (
               <CreditDetail
+                mayPay={can('CREDITOS_PAGAR')}
                 credit={detail}
                 payments={payments}
                 historyError={historyError}

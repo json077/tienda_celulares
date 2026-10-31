@@ -20,14 +20,14 @@ router.use(verificarToken);
 // Listar clientes
 router.get(
   '/',
-  verificarPermiso('CLIENTES_VER'),
+  verificarPermiso('CLIENTE_VER'),
   clientController.listar
 );
 
 // Obtener cliente por ID
 router.get(
   '/:idCliente',
-  verificarPermiso('CLIENTES_VER'),
+  verificarPermiso('CLIENTE_VER'),
   validarIdCliente,
   manejarErroresValidacion,
   clientController.obtenerPorId

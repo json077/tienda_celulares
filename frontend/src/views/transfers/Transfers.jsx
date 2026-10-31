@@ -42,7 +42,7 @@ import {
 } from './transferModel'
 
 const Transfers = () => {
-  const { usuario } = useAuth()
+  const { can } = useAuth()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -57,7 +57,7 @@ const Transfers = () => {
   const pending = useRef(false)
   const controller = useRef(null)
   const alive = () => controller.current && !controller.current.signal.aborted
-  const blocked = (permission) => !usuario?.roles?.includes('ROOT') && !!denied[permission]
+  const blocked = (permission) => !can(permission) || !!denied[permission]
   const noteError = useCallback((e, permission) => {
     setError(apiErrorMessage(e))
     if (e.status === 403) setDenied((d) => ({ ...d, [e.permission || permission]: true }))
@@ -87,6 +87,10 @@ const Transfers = () => {
     return () => current.abort()
   }, [load])
   const run = async (permission, operation, writing = false) => {
+    if (blocked(permission)) {
+      setError('Acceso denegado. No tienes permiso para esta operación.')
+      return
+    }
     if (!acquireTransferOperation(pending)) return
     setBusy(true)
     setError('')
@@ -135,7 +139,7 @@ const Transfers = () => {
     for (let i = 0; i < 2; i += 1) {
       if (results[i].status === 'rejected') {
         const e = results[i].reason
-        e.permission = ['PRODUCTOS_VER', 'INVENTARIO_VER'][i]
+        e.permission = ['PRODUCTO_VER', 'INVENTARIO_VER'][i]
         throw e
       }
     }
@@ -153,6 +157,10 @@ const Transfers = () => {
   }
   const openNew = () =>
     run('TRANSFERENCIAS_CREAR', async () => {
+      if (!can('PRODUCTO_VER') || !can('INVENTARIO_VER')) {
+        setError('Acceso denegado: la transferencia requiere consultar productos e inventario.')
+        return
+      }
       setCatalog(null)
       const current = await getCatalog()
       if (alive()) {
@@ -259,7 +267,12 @@ const Transfers = () => {
             </CButton>
             <CButton
               color="primary"
-              disabled={busy || blocked('TRANSFERENCIAS_CREAR')}
+              disabled={
+                busy ||
+                blocked('TRANSFERENCIAS_CREAR') ||
+                !can('PRODUCTO_VER') ||
+                !can('INVENTARIO_VER')
+              }
               onClick={openNew}
             >
               Nueva transferencia
@@ -425,7 +438,7 @@ const Transfers = () => {
                       color="primary"
                       disabled={busy || blocked('TRANSFERENCIAS_CONFIRMAR')}
                       onClick={() => {
-                        setMode('confirm')
+                        if (!blocked('TRANSFERENCIAS_CONFIRMAR')) setMode('confirm')
                         setChecked(false)
                         setError('')
                       }}
@@ -436,7 +449,7 @@ const Transfers = () => {
                       color="danger"
                       disabled={busy || blocked('TRANSFERENCIAS_ANULAR')}
                       onClick={() => {
-                        setMode('cancel')
+                        if (!blocked('TRANSFERENCIAS_ANULAR')) setMode('cancel')
                         setChecked(false)
                         setError('')
                       }}

@@ -10,6 +10,11 @@ import {
 } from './clientModel'
 
 export const customerConfig = {
+  permissions: {
+    create: 'CLIENTES_CREAR',
+    edit: 'CLIENTES_EDITAR',
+    deactivate: 'CLIENTES_ELIMINAR',
+  },
   title: 'Clientes',
   singular: 'cliente',
   idKey: 'id_cliente',

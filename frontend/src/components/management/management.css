@@ -1,0 +1,79 @@
+.management-heading {
+  display: flex;
+  gap: 1.1rem;
+  align-items: center;
+  padding: 1.5rem;
+  border: 1px solid var(--cui-border-color);
+  border-radius: 1rem;
+  background: linear-gradient(115deg, var(--cui-primary-bg-subtle), var(--cui-body-bg) 75%);
+}
+.management-heading-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.9rem;
+  color: var(--cui-primary);
+  background: var(--cui-body-bg);
+}
+.management-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--cui-primary-text-emphasis);
+}
+.management-panel {
+  border-radius: 1rem;
+  box-shadow: 0 0.2rem 0.8rem rgb(20 35 65 / 4%);
+}
+.management-metric {
+  border-radius: 0.85rem;
+  border-top: 3px solid var(--cui-primary);
+}
+.management-accent-1 {
+  border-top-color: var(--cui-success);
+}
+.management-accent-2 {
+  border-top-color: var(--cui-info);
+}
+.management-accent-3 {
+  border-top-color: var(--cui-warning);
+}
+.management-metric-value {
+  font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.management-chart {
+  position: relative;
+  height: 290px;
+}
+.management-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  background: var(--cui-tertiary-bg);
+  border: 1px dashed var(--cui-border-color);
+  border-radius: 0.75rem;
+}
+.management-table th {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  background: var(--cui-tertiary-bg);
+}
+.management-table td {
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 575px) {
+  .management-heading {
+    padding: 1rem;
+    align-items: flex-start;
+  }
+  .management-heading-icon {
+    display: none;
+  }
+  .management-chart {
+    height: 250px;
+  }
+}

@@ -18,7 +18,7 @@
 } from '@coreui/icons'
 
 export const modules = [
-  // Dashboard is a static authenticated landing page; no backend query guard exists.
+  // The landing page remains available; its data requires REPORTE_VER.
   { path: '/dashboard', name: 'Dashboard', icon: cilSpeedometer, authenticatedOnly: true },
   { path: '/ventas', name: 'Ventas', icon: cilCart, permission: 'VENTA_VER' },
   { path: '/compras', name: 'Compras', icon: cilBasket, permission: 'COMPRAS_VER' },

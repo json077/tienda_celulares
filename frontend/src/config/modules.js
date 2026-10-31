@@ -41,8 +41,7 @@ export const modules = [
     permission: 'DEVOLUCIONES_VER',
   },
   { path: '/garantias', name: 'Garantías', icon: cilShieldAlt, permission: 'GARANTIAS_VER' },
-  // No identifiable backend query guard: remain unavailable until explicitly defined.
-  { path: '/reportes', name: 'Reportes', icon: cilChartLine },
+  { path: '/reportes', name: 'Reportes', icon: cilChartLine, permission: 'REPORTE_VER' },
   { path: '/usuarios-roles', name: 'Usuarios y roles', icon: cilUser, permission: 'USUARIO_VER' },
   { path: '/respaldos', name: 'Respaldos', icon: cilSave, permission: 'BACKUP_CREAR' },
   { path: '/configuracion', name: 'Configuración', icon: cilSettings },

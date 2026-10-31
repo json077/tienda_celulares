@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const controller = require('../controllers/reportController');
+const { verificarToken } = require('../middlewares/authMiddleware');
+const { verificarPermiso } = require('../middlewares/permissionMiddleware');
+router.use(verificarToken);
+router.use(verificarPermiso('REPORTE_VER'));
+router.get('/', controller.catalog);
+router.get('/:type/excel', verificarPermiso('REPORTE_EXPORTAR'), controller.export);
+router.get('/:type', controller.read);
+module.exports = router;

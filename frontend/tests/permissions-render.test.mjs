@@ -181,9 +181,7 @@ test('autorización visual y handlers con sesiones simuladas, sin navegador ni A
       'ROOT, ADMINISTRADOR, VENDEDOR e INVENTARIO: menú y todas las URL directas',
       () => {
         const expected = {
-          ROOT: modules
-            .filter((m) => !['/reportes', '/configuracion'].includes(m.path))
-            .map((m) => m.path),
+          ROOT: modules.filter((m) => m.path !== '/configuracion').map((m) => m.path),
           ADMINISTRADOR: [
             '/dashboard',
             '/ventas',

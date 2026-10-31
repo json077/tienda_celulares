@@ -14,6 +14,7 @@ const Transfers = React.lazy(() => import('./views/transfers/Transfers'))
 const Returns = React.lazy(() => import('./views/returns/Returns'))
 const Warranties = React.lazy(() => import('./views/warranties/Warranties'))
 const Users = React.lazy(() => import('./views/users/Users'))
+const Reports = React.lazy(() => import('./views/reports/Reports'))
 const ModulePlaceholder = React.lazy(() => import('./views/modules/ModulePlaceholder'))
 
 const pages = {
@@ -30,6 +31,7 @@ const pages = {
   '/devoluciones': Returns,
   '/garantias': Warranties,
   '/usuarios-roles': Users,
+  '/reportes': Reports,
 }
 
 export const routes = [

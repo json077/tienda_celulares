@@ -22,6 +22,7 @@ const returnRoutes = require('./routes/returnRoutes');
 const warrantyRoutes = require('./routes/warrantyRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const backupRoutes = require('./routes/backupRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 const auditMiddleware = require('./middlewares/auditMiddleware');
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/devoluciones', returnRoutes);
 app.use('/api/garantias', warrantyRoutes);
 app.use('/api/auditoria', auditRoutes);
 app.use('/api/respaldos', backupRoutes);
+app.use('/api/reportes', reportRoutes);
 // Ruta no encontrada
 app.use((req, res) => {
   res.status(404).json({

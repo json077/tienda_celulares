@@ -15,6 +15,8 @@ export const endpointPermission = (path, method = 'GET') => {
   const parts = path.split('?')[0].split('/').filter(Boolean)
   const [resource, id, action] = parts
   const verb = method.toUpperCase()
+  if (resource === 'reportes')
+    return action === 'excel' ? ['REPORTE_VER', 'REPORTE_EXPORTAR'] : 'REPORTE_VER'
   if (resource === 'auth' && id === 'prueba-permiso') return 'PRODUCTOS_CREAR'
   const crud = {
     productos: 'PRODUCTOS',

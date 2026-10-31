@@ -1,0 +1,16 @@
+// Shared presentation contract for JSON, UI and XLSX. Only whitelisted fields leave SQL.
+const col = (key, label, type = 'text') => ({ key, label, type });
+const money = (key, label) => col(key, `${label} (NIO)`, 'money');
+const states = ['CONFIRMADA', 'BORRADOR', 'ANULADA'];
+const definitions = {
+  ventas: { title: 'Ventas', states, columns: [col('numero', 'Venta'), col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('cliente', 'Cliente'), col('tipo_venta', 'Condición'), col('estado', 'Estado'), money('total', 'Total')], sums: ['total'] },
+  compras: { title: 'Compras', states, columns: [col('numero', 'Documento'), col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('proveedor', 'Proveedor'), col('estado', 'Estado'), money('total', 'Total')], sums: ['total'] },
+  existencias: { title: 'Existencias actuales', product: true, dates: false, note: 'Stock actual al consultar; no representa existencias históricas.', columns: [col('sucursal', 'Sucursal'), col('sku', 'SKU'), col('producto', 'Producto'), col('stock_actual', 'Stock actual', 'number'), col('stock_minimo', 'Stock mínimo', 'number')], sums: ['stock_actual'] },
+  movimientos: { title: 'Movimientos de inventario', product: true, columns: [col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('sku', 'SKU'), col('producto', 'Producto'), col('tipo', 'Tipo'), col('cantidad', 'Cantidad', 'number'), col('stock_anterior', 'Stock anterior', 'number'), col('stock_nuevo', 'Stock nuevo', 'number'), col('referencia', 'Referencia')], sums: [] },
+  ranking: { title: 'Productos más vendidos', product: true, note: 'Ranking bruto: solo ventas confirmadas, sin descontar devoluciones. Ordenado por unidades vendidas.', columns: [col('sku', 'SKU'), col('producto', 'Producto'), col('cantidad', 'Unidades vendidas', 'number'), money('importe', 'Importe de líneas')], sums: ['cantidad', 'importe'] },
+  creditos: { title: 'Créditos pendientes', note: 'Créditos activos con saldo pendiente actual. Las fechas filtran el inicio del crédito; no reconstruyen saldos históricos.', columns: [col('numero', 'Venta'), col('fecha', 'Inicio del crédito'), col('sucursal', 'Sucursal'), col('cliente', 'Cliente'), col('estado', 'Estado'), money('monto_total', 'Monto del crédito'), money('saldo_pendiente', 'Saldo pendiente')], sums: ['saldo_pendiente'] },
+  pagos: { title: 'Pagos', states: ['APLICADO', 'ANULADO'], methods: ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA'], note: 'Aplicados y anulados se totalizan por separado en moneda base NIO. Los anulados no forman parte del cobro aplicado.', columns: [col('id_pago', 'Pago'), col('numero', 'Venta'), col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('metodo', 'Método'), col('moneda', 'Moneda original'), col('monto', 'Monto original', 'number'), money('monto_base', 'Monto base'), col('estado', 'Estado')], sums: [] },
+  devoluciones: { title: 'Devoluciones', states, note: 'El importe es una valoración de los artículos devueltos. No representa dinero reembolsado ni modifica pagos, caja o créditos.', columns: [col('numero', 'Devolución'), col('venta', 'Venta'), col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('motivo', 'Motivo'), col('estado', 'Estado'), money('total_devuelto', 'Valoración devuelta')], sums: ['total_devuelto'] },
+};
+
+module.exports = definitions;

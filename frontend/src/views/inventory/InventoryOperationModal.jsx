@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react'
+import CModal from '../../components/management/AppModal'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   CAlert,
@@ -8,7 +9,6 @@ import {
   CFormLabel,
   CFormSelect,
   CFormTextarea,
-  CModal,
   CModalBody,
   CModalFooter,
   CModalHeader,
@@ -18,7 +18,15 @@ import {
 
 import { validateInventoryOperation } from './inventoryOperation'
 
-const InventoryOperationModal = ({ kind, row, saving, error, onConfirm, onClose }) => {
+const InventoryOperationModal = ({
+  kind,
+  row,
+  saving,
+  error,
+  onConfirm,
+  onClose,
+  visible = true,
+}) => {
   const [values, setValues] = useState({
     tipo: 'ENTRADA',
     cantidad: '',
@@ -45,7 +53,8 @@ const InventoryOperationModal = ({ kind, row, saving, error, onConfirm, onClose 
 
   return (
     <CModal
-      visible
+      visible={visible}
+      size={isMinimum ? 'sm' : 'lg'}
       backdrop="static"
       keyboard={!saving}
       onClose={onClose}
@@ -184,6 +193,7 @@ const InventoryOperationModal = ({ kind, row, saving, error, onConfirm, onClose 
 }
 
 InventoryOperationModal.propTypes = {
+  visible: PropTypes.bool,
   kind: PropTypes.oneOf(['adjust', 'minimum']).isRequired,
   row: PropTypes.object.isRequired,
   saving: PropTypes.bool.isRequired,

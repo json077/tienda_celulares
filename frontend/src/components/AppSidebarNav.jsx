@@ -7,7 +7,7 @@ import 'simplebar-react/dist/simplebar.min.css'
 
 import { CBadge, CNavLink, CSidebarNav } from '@coreui/react'
 
-export const AppSidebarNav = ({ items }) => {
+export const AppSidebarNav = ({ items, compact = false }) => {
   const navLink = (name, icon, badge, indent = false) => {
     return (
       <>
@@ -18,9 +18,9 @@ export const AppSidebarNav = ({ items }) => {
                 <span className="nav-icon-bullet"></span>
               </span>
             )}
-        {name && name}
+        {name && <span className="smart-sidebar-label">{name}</span>}
         {badge && (
-          <CBadge color={badge.color} className="ms-auto" size="sm">
+          <CBadge color={badge.color} className="smart-sidebar-label ms-auto" size="sm">
             {badge.text}
           </CBadge>
         )}
@@ -35,6 +35,8 @@ export const AppSidebarNav = ({ items }) => {
       <Component as="div" key={index}>
         {rest.to || rest.href ? (
           <CNavLink
+            aria-label={name}
+            title={compact ? name : undefined}
             {...(rest.to && { as: NavLink })}
             {...(rest.href && { target: '_blank', rel: 'noopener noreferrer' })}
             {...rest}
@@ -52,7 +54,14 @@ export const AppSidebarNav = ({ items }) => {
     const { component, name, icon, items, to, ...rest } = item
     const Component = component
     return (
-      <Component compact as="div" key={index} toggler={navLink(name, icon)} {...rest}>
+      <Component
+        compact
+        as="div"
+        key={index}
+        title={compact ? name : undefined}
+        toggler={navLink(name, icon)}
+        {...rest}
+      >
         {items?.map((item, index) =>
           item.items ? navGroup(item, index) : navItem(item, index, true),
         )}
@@ -70,4 +79,5 @@ export const AppSidebarNav = ({ items }) => {
 
 AppSidebarNav.propTypes = {
   items: PropTypes.arrayOf(PropTypes.any).isRequired,
+  compact: PropTypes.bool,
 }

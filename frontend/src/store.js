@@ -16,7 +16,7 @@ import { legacy_createStore as createStore } from 'redux'
  * @property {string} theme - Current theme mode ('light', 'dark', or 'auto')
  */
 const initialState = {
-  sidebarShow: true,
+  sidebarShow: false,
   theme: 'light',
 }
 

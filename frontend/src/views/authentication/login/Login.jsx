@@ -6,15 +6,15 @@ import {
   CCard,
   CCardBody,
   CCol,
-  CContainer,
   CForm,
   CFormInput,
   CFormLabel,
   CInputGroup,
-  CRow,
   CSpinner,
 } from '@coreui/react'
 import { useAuth } from '../../../contexts/AuthContext'
+import { CIcon } from '@coreui/icons-react'
+import { cilMobile } from '@coreui/icons'
 
 const Login = () => {
   const { login, loading, isAuthenticated } = useAuth()
@@ -52,74 +52,84 @@ const Login = () => {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
-      <CContainer>
-        <CRow className="justify-content-center">
-          <CCol md={8} lg={6} xl={5}>
-            <CCard className="p-4">
-              <CCardBody>
-                <h1 className="h4 text-center">Iniciar sesión</h1>
-                <p className="text-body-secondary text-center">
-                  Control de inventario y facturación
-                </p>
-                {error && (
-                  <CAlert color="danger" role="alert">
-                    {error}
-                  </CAlert>
-                )}
-                <CForm className="row gy-3" onSubmit={handleSubmit} aria-busy={submitting}>
-                  <CCol xs={12}>
-                    <CFormLabel htmlFor="username">Usuario</CFormLabel>
-                    <CFormInput
-                      id="username"
-                      name="username"
-                      autoComplete="username"
-                      placeholder="Nombre de usuario"
-                      value={username}
-                      onChange={(event) => setUsername(event.target.value)}
-                      disabled={submitting}
-                      required
-                    />
-                  </CCol>
-                  <CCol xs={12}>
-                    <CFormLabel htmlFor="password">Contraseña</CFormLabel>
-                    <CInputGroup>
-                      <CFormInput
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        autoComplete="current-password"
-                        placeholder="Contraseña"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        disabled={submitting}
-                        required
-                      />
-                      <CButton
-                        type="button"
-                        color="secondary"
-                        variant="outline"
-                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                        aria-pressed={showPassword}
-                        onClick={() => setShowPassword((visible) => !visible)}
-                      >
-                        {showPassword ? 'Ocultar' : 'Mostrar'}
-                      </CButton>
-                    </CInputGroup>
-                  </CCol>
-                  <CCol xs={12}>
-                    <CButton color="primary" type="submit" className="w-100" disabled={submitting}>
-                      {submitting && <CSpinner size="sm" className="me-2" aria-hidden="true" />}
-                      {submitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
-                    </CButton>
-                  </CCol>
-                </CForm>
-              </CCardBody>
-            </CCard>
-          </CCol>
-        </CRow>
-      </CContainer>
-    </div>
+    <main className="login-page">
+      <div className="login-shell">
+        <aside className="login-brand" aria-label="Tienda Celulares">
+          <div className="login-brand-name">
+            <span className="login-brand-icon">
+              <CIcon icon={cilMobile} size="xl" />
+            </span>
+            Tienda Celulares
+          </div>
+          <div className="login-brand-message">
+            <h2>Tu negocio, conectado.</h2>
+            <p className="mt-3 mb-0">
+              Inventario, ventas y administración en un solo lugar. Más claridad para cada decisión.
+            </p>
+          </div>
+          <span className="login-brand-caption">Gestión comercial e inventario</span>
+        </aside>
+        <CCard className="login-form-card">
+          <CCardBody>
+            <p className="login-eyebrow mb-2">BIENVENIDO A TU ESPACIO DE TRABAJO</p>
+            <h1 className="h3 mb-2">Iniciar sesión</h1>
+            <p className="text-body-secondary mb-4">Control de inventario y facturación</p>
+            {error && (
+              <CAlert color="danger" role="alert">
+                {error}
+              </CAlert>
+            )}
+            <CForm className="row gy-3" onSubmit={handleSubmit} aria-busy={submitting}>
+              <CCol xs={12}>
+                <CFormLabel htmlFor="username">Usuario</CFormLabel>
+                <CFormInput
+                  id="username"
+                  name="username"
+                  autoComplete="username"
+                  placeholder="Nombre de usuario"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  disabled={submitting}
+                  required
+                />
+              </CCol>
+              <CCol xs={12}>
+                <CFormLabel htmlFor="password">Contraseña</CFormLabel>
+                <CInputGroup>
+                  <CFormInput
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="Contraseña"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    disabled={submitting}
+                    required
+                  />
+                  <CButton
+                    type="button"
+                    color="secondary"
+                    variant="outline"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                  >
+                    {showPassword ? 'Ocultar' : 'Mostrar'}
+                  </CButton>
+                </CInputGroup>
+              </CCol>
+              <CCol xs={12}>
+                <CButton color="primary" type="submit" className="w-100" disabled={submitting}>
+                  {submitting && <CSpinner size="sm" className="me-2" aria-hidden="true" />}
+                  {submitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                </CButton>
+              </CCol>
+            </CForm>
+          </CCardBody>
+        </CCard>
+      </div>
+    </main>
   )
 }
 

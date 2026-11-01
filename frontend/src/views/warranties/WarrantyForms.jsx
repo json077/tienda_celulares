@@ -49,9 +49,11 @@ const ConfirmedForm = ({ id, busy, validate, onSave, children, label }) => {
           disabled={busy || !!invalid}
           onChange={(e) => setChecked(e.target.checked)}
         />
-        <CButton type="submit" color="primary" disabled={busy || !checked || !!invalid}>
-          {busy ? 'Procesando…' : label}
-        </CButton>
+        <div className="modal-actions">
+          <CButton type="submit" color="primary" disabled={busy || !checked || !!invalid}>
+            {busy ? 'Procesando…' : label}
+          </CButton>
+        </div>
       </fieldset>
     </CForm>
   )

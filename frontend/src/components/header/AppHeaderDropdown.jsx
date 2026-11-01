@@ -9,8 +9,10 @@ import {
   CDropdownToggle,
 } from '@coreui/react'
 import { cilAccountLogout, cilUser } from '@coreui/icons'
-import CIcon from '@coreui/icons-react'
+import { CIcon } from '@coreui/icons-react'
 import { useAuth } from '../../contexts/AuthContext'
+import ProfileAvatar from '../ProfileAvatar'
+import '../../views/profile/profile.css'
 
 const AppHeaderDropdown = () => {
   const { usuario, logout } = useAuth()
@@ -27,7 +29,7 @@ const AppHeaderDropdown = () => {
   return (
     <CDropdown variant="nav-item">
       <CDropdownToggle aria-label={`Menú de usuario: ${name}`}>
-        <CIcon icon={cilUser} className="me-2" />
+        <ProfileAvatar name={name} />
         <span className="d-none d-md-inline">{usuario?.username || name}</span>
       </CDropdownToggle>
       <CDropdownMenu placement="bottom-end">
@@ -36,6 +38,11 @@ const AppHeaderDropdown = () => {
           {fullName && <div className="small text-body-secondary">{usuario?.username}</div>}
           <div className="small text-body-secondary">Roles: {roles}</div>
         </CDropdownHeader>
+        <CDropdownDivider />
+        <CDropdownItem as="button" type="button" onClick={() => navigate('/mi-perfil')}>
+          <CIcon icon={cilUser} className="me-2" />
+          Mi perfil
+        </CDropdownItem>
         <CDropdownDivider />
         <CDropdownItem as="button" type="button" onClick={handleLogout}>
           <CIcon icon={cilAccountLogout} className="me-2" />

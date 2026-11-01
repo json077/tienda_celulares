@@ -172,15 +172,19 @@ const CashOperation = ({ mode, boxes, session, busy, onSave }) => {
           disabled={busy || !!invalid}
           onChange={(e) => setChecked(e.target.checked)}
         />
-        <CButton
-          type="submit"
-          color={mode === 'close' ? 'danger' : 'primary'}
-          disabled={busy || !checked || !!invalid}
-        >
-          {busy
-            ? 'Procesando…'
-            : { open: 'Abrir caja', close: 'Cerrar caja', movement: 'Registrar movimiento' }[mode]}
-        </CButton>
+        <div className="modal-actions">
+          <CButton
+            type="submit"
+            color={mode === 'close' ? 'danger' : 'primary'}
+            disabled={busy || !checked || !!invalid}
+          >
+            {busy
+              ? 'Procesando…'
+              : { open: 'Abrir caja', close: 'Cerrar caja', movement: 'Registrar movimiento' }[
+                  mode
+                ]}
+          </CButton>
+        </div>
       </fieldset>
     </CForm>
   )

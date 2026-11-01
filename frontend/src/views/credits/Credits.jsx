@@ -1,3 +1,4 @@
+import CModal from '../../components/management/AppModal'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
@@ -8,7 +9,6 @@ import {
   CFormInput,
   CFormLabel,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalHeader,
   CModalTitle,
@@ -398,7 +398,7 @@ const Credits = () => {
       </CModal>
       <CModal
         visible={!!selected}
-        size="lg"
+        size={quota ? 'lg' : 'xl'}
         scrollable
         backdrop="static"
         keyboard={!busy}

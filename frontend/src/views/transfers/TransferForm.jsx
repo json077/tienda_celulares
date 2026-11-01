@@ -306,9 +306,11 @@ const TransferForm = ({ catalog, busy, onSave }) => {
             />
           </CAlert>
         )}
-        <CButton color="primary" type="submit" disabled={busy || (review && !confirmed)}>
-          {busy ? 'Procesando…' : review ? 'Crear borrador' : 'Revisar transferencia'}
-        </CButton>
+        <div className="modal-actions">
+          <CButton color="primary" type="submit" disabled={busy || (review && !confirmed)}>
+            {busy ? 'Procesando…' : review ? 'Crear borrador' : 'Revisar transferencia'}
+          </CButton>
+        </div>
       </fieldset>
     </CForm>
   )

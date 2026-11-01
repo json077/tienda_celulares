@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   CAlert,
@@ -33,6 +33,7 @@ const SaleForm = ({
   canReadUnits = false,
   loadUnits = noUnits,
 }) => {
+  const formId = useId()
   const [values, setValues] = useState({
     numero_venta: '',
     id_cliente: '',
@@ -182,25 +183,9 @@ const SaleForm = ({
             disabled={saving}
             onChange={(e) => setChecked(e.target.checked)}
           />
-          <CButton
-            className="me-2 mt-3"
-            disabled={saving}
-            color="secondary"
-            onClick={() => setReview(false)}
-          >
-            Editar
-          </CButton>
-          <CButton
-            className="mt-3"
-            disabled={saving || !checked}
-            color="primary"
-            onClick={() => onSave(values)}
-          >
-            Guardar borrador
-          </CButton>
         </>
       ) : (
-        <CForm onSubmit={submit}>
+        <CForm id={formId} onSubmit={submit}>
           <fieldset disabled={saving}>
             <CFormLabel htmlFor="sale-number">Número de venta</CFormLabel>
             <CFormInput
@@ -411,20 +396,33 @@ const SaleForm = ({
               value={values.observacion}
               onChange={(e) => set('observacion', e.target.value)}
             />
-            <CButton
-              type="submit"
-              color="primary"
-              className="mt-3"
-              disabled={!values.detalles.length}
-            >
-              Revisar venta
-            </CButton>
           </fieldset>
         </CForm>
       )}
-      <CButton className="mt-3 ms-2" color="secondary" disabled={saving} onClick={onCancel}>
-        Cerrar
-      </CButton>
+      <div className="modal-actions">
+        {review ? (
+          <>
+            <CButton disabled={saving} color="secondary" onClick={() => setReview(false)}>
+              Editar
+            </CButton>
+            <CButton disabled={saving || !checked} color="primary" onClick={() => onSave(values)}>
+              Guardar borrador
+            </CButton>
+          </>
+        ) : (
+          <CButton
+            type="submit"
+            form={formId}
+            color="primary"
+            disabled={saving || !values.detalles.length}
+          >
+            Revisar venta
+          </CButton>
+        )}
+        <CButton color="secondary" disabled={saving} onClick={onCancel}>
+          Cerrar
+        </CButton>
+      </div>
     </>
   )
 }

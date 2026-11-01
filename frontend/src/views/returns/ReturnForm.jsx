@@ -289,9 +289,11 @@ const ReturnForm = ({ context, busy, onSave }) => {
             />
           </CAlert>
         )}
-        <CButton color="primary" type="submit" disabled={busy || (review && !checked)}>
-          {busy ? 'Procesando…' : review ? 'Crear borrador' : 'Revisar devolución'}
-        </CButton>
+        <div className="modal-actions">
+          <CButton color="primary" type="submit" disabled={busy || (review && !checked)}>
+            {busy ? 'Procesando…' : review ? 'Crear borrador' : 'Revisar devolución'}
+          </CButton>
+        </div>
       </fieldset>
     </CForm>
   )

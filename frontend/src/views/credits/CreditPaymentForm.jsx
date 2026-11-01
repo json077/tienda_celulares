@@ -183,7 +183,7 @@ const CreditPaymentForm = ({
           disabled={!!invalid || busy}
           onChange={(event) => setConfirmed(event.target.checked)}
         />
-        <div className="d-flex flex-wrap gap-2">
+        <div className="modal-actions">
           <CButton
             color="secondary"
             variant="outline"

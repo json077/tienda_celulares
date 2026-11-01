@@ -1,3 +1,4 @@
+import CModal from '../../components/management/AppModal'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
@@ -7,7 +8,6 @@ import {
   CCardBody,
   CFormInput,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalHeader,
   CModalTitle,
@@ -453,45 +453,49 @@ const Sales = () => {
             {mode === 'detail' && sale && (
               <>
                 <SaleDetail sale={sale} invoice={invoice} payments={payments} warnings={warnings} />
-                {sale.estado === 'BORRADOR' && (
-                  <CButton
-                    className="me-2"
-                    color="primary"
-                    disabled={busy || denied.confirm || !allowed('availability')}
-                    onClick={prepareConfirm}
-                  >
-                    Revisar y confirmar
-                  </CButton>
-                )}
-                {sale.estado === 'CONFIRMADA' && (
-                  <>
-                    <CButton
-                      className="me-2"
-                      color="primary"
-                      disabled={busy || denied.invoice || !allowed('invoice')}
-                      onClick={print}
-                    >
-                      Ver / imprimir factura
-                    </CButton>
-                    {!hasPayments && (
+                {['BORRADOR', 'CONFIRMADA'].includes(sale.estado) && (
+                  <div className="modal-actions">
+                    {sale.estado === 'BORRADOR' && (
                       <CButton
-                        color="danger"
-                        disabled={busy || denied.cancel || !allowed('cancel')}
-                        onClick={() => {
-                          setCancelChecked(false)
-                          if (allowed('cancel')) setMode('cancel')
-                        }}
+                        className="me-2"
+                        color="primary"
+                        disabled={busy || denied.confirm || !allowed('availability')}
+                        onClick={prepareConfirm}
                       >
-                        Anular venta
+                        Revisar y confirmar
                       </CButton>
                     )}
-                    {hasPayments && (
-                      <CAlert className="mt-3" color="warning">
-                        La venta tiene pagos aplicados. El backend exige anularlos antes de anular
-                        la venta.
-                      </CAlert>
+                    {sale.estado === 'CONFIRMADA' && (
+                      <>
+                        <CButton
+                          className="me-2"
+                          color="primary"
+                          disabled={busy || denied.invoice || !allowed('invoice')}
+                          onClick={print}
+                        >
+                          Ver / imprimir factura
+                        </CButton>
+                        {!hasPayments && (
+                          <CButton
+                            color="danger"
+                            disabled={busy || denied.cancel || !allowed('cancel')}
+                            onClick={() => {
+                              setCancelChecked(false)
+                              if (allowed('cancel')) setMode('cancel')
+                            }}
+                          >
+                            Anular venta
+                          </CButton>
+                        )}
+                        {hasPayments && (
+                          <CAlert className="mt-3" color="warning">
+                            La venta tiene pagos aplicados. El backend exige anularlos antes de
+                            anular la venta.
+                          </CAlert>
+                        )}
+                      </>
                     )}
-                  </>
+                  </div>
                 )}
               </>
             )}
@@ -525,22 +529,24 @@ const Sales = () => {
                   />{' '}
                   He revisado la venta y autorizo su anulación y la reversión de inventario
                 </label>
-                <CButton
-                  className="mt-3 me-2"
-                  color="secondary"
-                  disabled={busy}
-                  onClick={() => setMode('detail')}
-                >
-                  Volver
-                </CButton>
-                <CButton
-                  className="mt-3"
-                  color="danger"
-                  disabled={busy || !cancelChecked}
-                  onClick={cancel}
-                >
-                  Confirmar anulación
-                </CButton>
+                <div className="modal-actions">
+                  <CButton
+                    className="mt-3 me-2"
+                    color="secondary"
+                    disabled={busy}
+                    onClick={() => setMode('detail')}
+                  >
+                    Volver
+                  </CButton>
+                  <CButton
+                    className="mt-3"
+                    color="danger"
+                    disabled={busy || !cancelChecked}
+                    onClick={cancel}
+                  >
+                    Confirmar anulación
+                  </CButton>
+                </div>
               </>
             )}
             {mode === 'invoice' && invoice && (
@@ -564,12 +570,14 @@ const Sales = () => {
                     </div>
                   )}
                 </div>
-                <CButton color="secondary" className="me-2" onClick={() => setMode('detail')}>
-                  Volver
-                </CButton>
-                <CButton color="primary" onClick={() => window.print()}>
-                  Imprimir factura
-                </CButton>
+                <div className="modal-actions">
+                  <CButton color="secondary" onClick={() => setMode('detail')}>
+                    Volver
+                  </CButton>
+                  <CButton color="primary" onClick={() => window.print()}>
+                    Imprimir factura
+                  </CButton>
+                </div>
               </>
             )}
           </CModalBody>

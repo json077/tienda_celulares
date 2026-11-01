@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const brandRoutes = require('./routes/brandRoutes');
@@ -41,6 +42,14 @@ app.get('/api/health', (req, res) => {
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/profile', profileRoutes);
+app.use((error, req, res, next) => {
+  if (req.path.startsWith('/api/auth/profile')) {
+    return res.status(error.type === 'entity.too.large' ? 413 : 400)
+      .json({ ok: false, message: 'La solicitud de perfil no es válida o supera el tamaño permitido.' });
+  }
+  return next(error);
+});
 app.use('/api/usuarios', userRoutes);
 app.use('/api/categorias', categoryRoutes);
 app.use('/api/marcas', brandRoutes);

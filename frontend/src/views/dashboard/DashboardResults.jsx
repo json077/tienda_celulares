@@ -14,23 +14,39 @@ import {
   CTableDataCell,
 } from '@coreui/react'
 import { MetricCards, managementNumber } from '../../components/management/ManagementUI'
+import { useChartAppearance } from './chartAppearance'
+import TopProductsChart from './TopProductsChart'
+import DailySalesChart from './DailySalesChart'
 
-const ChartPanel = ({ title, description, labels, values, money = false, doughnut = false }) => {
+const ChartPanel = ({
+  title,
+  description,
+  labels,
+  values,
+  money = false,
+  doughnut = false,
+  horizontal = false,
+}) => {
   const Chart = doughnut ? CChartDoughnut : CChartBar
+  const appearance = useChartAppearance()
   const empty = labels.length === 0 || (doughnut && values.every((v) => v === 0))
   return (
-    <CCard className="management-panel h-100">
+    <CCard className="management-panel dashboard-chart-panel h-100">
       <CCardBody>
-        <h2 className="h5">{title}</h2>
-        <p className="small text-body-secondary">{description}</p>
+        <h2 className="h6 mb-2">{title}</h2>
+        <p className="small text-body-secondary mb-3">{description}</p>
         {empty ? (
           <div className="management-empty">
             No hay resultados para los filtros y sucursales autorizadas.
           </div>
         ) : (
           <>
-            <div className="management-chart">
+            <div
+              className="management-chart"
+              style={horizontal ? { height: Math.max(256, labels.length * 40) } : undefined}
+            >
               <Chart
+                wrapper={false}
                 role="img"
                 aria-label={title}
                 data={{
@@ -39,18 +55,98 @@ const ChartPanel = ({ title, description, labels, values, money = false, doughnu
                     {
                       label: money ? 'Ventas confirmadas (C$)' : 'Cantidad',
                       data: values,
-                      backgroundColor: doughnut ? ['#198754', '#f0ad4e', '#dc3545'] : '#4263eb',
-                      borderRadius: doughnut ? 0 : 5,
+                      backgroundColor: doughnut
+                        ? [appearance.positive, appearance.warning, appearance.danger]
+                        : appearance.action,
+                      borderRadius: doughnut ? 0 : 4,
+                      ...(appearance.dark && { borderColor: appearance.chartSurface }),
+                      ...(!doughnut && {
+                        maxBarThickness: horizontal ? 20 : 32,
+                        categoryPercentage: 0.72,
+                        barPercentage: 0.8,
+                      }),
                     },
                   ],
                 }}
                 options={{
                   maintainAspectRatio: false,
-                  plugins: { legend: { display: doughnut, position: 'bottom' } },
+                  animation: appearance.animation,
+                  color: appearance.text,
+                  plugins: {
+                    ...(appearance.dark && {
+                      tooltip: {
+                        backgroundColor: appearance.chartSurface,
+                        titleColor: appearance.chartText,
+                        bodyColor: appearance.chartMuted,
+                        borderColor: appearance.chartBorder,
+                        borderWidth: 1,
+                      },
+                    }),
+                    legend: {
+                      display: doughnut,
+                      position: 'bottom',
+                      labels: {
+                        color: appearance.text,
+                        padding: 16,
+                        usePointStyle: true,
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        font: { size: 12 },
+                      },
+                    },
+                  },
                   ...(doughnut
-                    ? { cutout: '68%' }
+                    ? { cutout: '64%', radius: '94%' }
                     : {
-                        scales: { y: { beginAtZero: true, ticks: { precision: money ? 2 : 0 } } },
+                        indexAxis: horizontal ? 'y' : 'x',
+                        scales: {
+                          x: horizontal
+                            ? {
+                                beginAtZero: true,
+                                ticks: { precision: 0, color: appearance.muted },
+                                grid: { color: appearance.grid },
+                              }
+                            : {
+                                ticks: {
+                                  color: appearance.muted,
+                                  maxRotation: 0,
+                                  maxTicksLimit: 8,
+                                  callback(value) {
+                                    return String(this.getLabelForValue(value)).slice(5)
+                                  },
+                                },
+                                grid: { display: false },
+                              },
+                          y: horizontal
+                            ? {
+                                ticks: {
+                                  color: appearance.muted,
+                                  autoSkip: false,
+                                  font: { size: 11 },
+                                  callback(value) {
+                                    const label = String(this.getLabelForValue(value))
+                                    const limit = this.chart.width < 480 ? 22 : 48
+                                    if (label.length <= limit) return label
+                                    const split = label.lastIndexOf(' ', limit)
+                                    const end = split > 0 ? split : limit
+                                    const rest = label.slice(end).trim()
+                                    return [
+                                      label.slice(0, end),
+                                      rest.length > limit ? rest.slice(0, limit - 1) + '…' : rest,
+                                    ]
+                                  },
+                                },
+                                afterFit(scale) {
+                                  scale.width = Math.min(scale.width, scale.chart.width * 0.45)
+                                },
+                                grid: { display: false },
+                              }
+                            : {
+                                beginAtZero: true,
+                                ticks: { color: appearance.muted },
+                                grid: { color: appearance.grid },
+                              },
+                        },
                       }),
                 }}
               />
@@ -91,11 +187,12 @@ ChartPanel.propTypes = {
   values: PropTypes.array.isRequired,
   money: PropTypes.bool,
   doughnut: PropTypes.bool,
+  horizontal: PropTypes.bool,
 }
 
 const DashboardResults = ({ data, filters, branches }) => (
   <>
-    <p className="small text-body-secondary">
+    <p className="visually-hidden">
       Período aplicado: {filters.desde} al {filters.hasta} ·{' '}
       {filters.id_sucursal
         ? branches.find((b) => String(b.id_sucursal) === String(filters.id_sucursal))?.nombre
@@ -107,51 +204,40 @@ const DashboardResults = ({ data, filters, branches }) => (
           label: 'Ventas confirmadas',
           value: data.total,
           type: 'money',
-          note: 'Importe de ventas del período',
+          note: 'Importe del mes',
         },
         {
-          label: 'Número de ventas confirmadas',
+          label: 'Ventas confirmadas (n.º)',
           value: data.count,
           note: 'Documentos confirmados',
         },
         {
           label: 'Unidades vendidas',
           value: data.units,
-          note: 'Ventas confirmadas, sin descontar devoluciones',
+          note: 'Brutas, sin restar devoluciones',
         },
         {
           label: 'Existencias actuales',
           value: data.stock,
-          note: 'Unidades registradas en inventario',
+          note: 'Unidades en inventario',
         },
       ]}
     />
     <CRow className="g-4 mb-4">
-      <CCol xl={8}>
-        <ChartPanel
-          title="Ventas por día"
-          description="Importe en córdobas de ventas CONFIRMADAS. Solo se muestran días con ventas confirmadas."
-          labels={data.daily.map((r) => r.fecha)}
-          values={data.daily.map((r) => r.total)}
-          money
-        />
+      <CCol lg={8}>
+        <DailySalesChart rows={data.monetaryDaily} period={filters} />
       </CCol>
-      <CCol xl={4}>
+      <CCol lg={4}>
         <ChartPanel
           title="Ventas por estado"
-          description="Número de documentos en cada estado dentro del período."
+          description="Documentos por estado."
           labels={data.states.map((r) => r.estado)}
           values={data.states.map((r) => r.cantidad)}
           doughnut
         />
       </CCol>
       <CCol xs={12}>
-        <ChartPanel
-          title="Productos más vendidos"
-          description="Hasta 10 productos por cantidad en ventas confirmadas. Cantidades brutas, sin descontar devoluciones."
-          labels={data.products.map((r) => `${r.sku} · ${r.producto}`)}
-          values={data.products.map((r) => Number(r.cantidad))}
-        />
+        <TopProductsChart products={data.products} />
       </CCol>
     </CRow>
   </>

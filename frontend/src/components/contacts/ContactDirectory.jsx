@@ -1,4 +1,5 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react'
+import CModal from '../management/AppModal'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   CAlert,
@@ -10,7 +11,6 @@ import {
   CFormInput,
   CFormLabel,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalFooter,
   CModalHeader,
@@ -433,6 +433,7 @@ const ContactDirectory = ({ config, service }) => {
 
       <CModal
         visible={!!statusRecord && statusAllowed(statusRecord)}
+        size="sm"
         backdrop="static"
         keyboard={!operation}
         onClose={() => {

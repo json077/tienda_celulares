@@ -16,6 +16,7 @@ const Warranties = React.lazy(() => import('./views/warranties/Warranties'))
 const Users = React.lazy(() => import('./views/users/Users'))
 const Reports = React.lazy(() => import('./views/reports/Reports'))
 const Backups = React.lazy(() => import('./views/backups/Backups'))
+const MyProfile = React.lazy(() => import('./views/profile/MyProfile'))
 const ModulePlaceholder = React.lazy(() => import('./views/modules/ModulePlaceholder'))
 
 const pages = {
@@ -38,6 +39,7 @@ const pages = {
 
 export const routes = [
   { path: '/', name: 'Inicio' },
+  { path: '/mi-perfil', name: 'Mi perfil', authenticatedOnly: true, element: MyProfile },
   ...modules.map(({ path, name, permission, authenticatedOnly }) => ({
     path,
     name,

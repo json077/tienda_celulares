@@ -1,0 +1,337 @@
+// CoreUI's existing theme selector remains the single source of theme state.
+[data-coreui-theme='dark'] {
+  color-scheme: dark;
+  --tc-background: #0b1220;
+  --tc-surface: #111c2e;
+  --tc-elevated: #17263d;
+  --tc-border: #26364c;
+  --tc-action: #3b82f6;
+  --tc-text: #f1f5f9;
+  --tc-muted: #94a3b8;
+  --tc-positive: #22c55e;
+  --tc-danger: #f87171;
+  --tc-warning: #fbbf24;
+  --tc-focus: #93c5fd;
+  --tc-shadow: 0 4px 24px rgb(0 0 0 / 15%);
+  --tc-shadow-hover: 0 8px 28px rgb(0 0 0 / 23%);
+  --tc-chart-action: var(--tc-action);
+  --tc-chart-secondary: #2dd4bf;
+  --tc-chart-surface: var(--tc-surface);
+  --tc-chart-text: var(--tc-text);
+  --tc-chart-muted: var(--tc-muted);
+  --tc-chart-grid: var(--tc-border);
+  --tc-chart-border: var(--tc-border);
+  --cui-body-bg: var(--tc-background);
+  --cui-body-bg-rgb: 11, 18, 32;
+  --cui-body-color: var(--tc-text);
+  --cui-body-color-rgb: 241, 245, 249;
+  --cui-emphasis-color: var(--tc-text);
+  --cui-emphasis-color-rgb: 241, 245, 249;
+  --cui-secondary-color: var(--tc-muted);
+  --cui-secondary-color-rgb: 148, 163, 184;
+  --cui-tertiary-color: var(--tc-muted);
+  --cui-tertiary-color-rgb: 148, 163, 184;
+  --cui-secondary-bg: var(--tc-elevated);
+  --cui-secondary-bg-rgb: 23, 38, 61;
+  --cui-tertiary-bg: var(--tc-elevated);
+  --cui-tertiary-bg-rgb: 23, 38, 61;
+  --cui-border-color: var(--tc-border);
+  --cui-border-color-translucent: var(--tc-border);
+  --cui-primary: var(--tc-action);
+  --cui-primary-rgb: 59, 130, 246;
+  --cui-success: var(--tc-positive);
+  --cui-success-rgb: 34, 197, 94;
+  --cui-danger: var(--tc-danger);
+  --cui-danger-rgb: 248, 113, 113;
+  --cui-warning: var(--tc-warning);
+  --cui-warning-rgb: 251, 191, 36;
+  --cui-info: #38bdf8;
+  --cui-info-rgb: 56, 189, 248;
+  --cui-link-color: var(--tc-action);
+  --cui-link-color-rgb: 59, 130, 246;
+  --cui-link-hover-color: var(--tc-focus);
+  --cui-link-hover-color-rgb: 147, 197, 253;
+  --cui-primary-text-emphasis: var(--tc-focus);
+  --cui-primary-bg-subtle: #142a49;
+  --cui-primary-border-subtle: #284b78;
+  --cui-success-text-emphasis: #86efac;
+  --cui-success-bg-subtle: #102e28;
+  --cui-success-border-subtle: #235440;
+  --cui-danger-text-emphasis: #fca5a5;
+  --cui-danger-bg-subtle: #36202e;
+  --cui-danger-border-subtle: #653343;
+  --cui-warning-text-emphasis: #fde68a;
+  --cui-warning-bg-subtle: #332b20;
+  --cui-warning-border-subtle: #65512b;
+  --cui-info-text-emphasis: #7dd3fc;
+  --cui-info-bg-subtle: #122e42;
+  --cui-info-border-subtle: #24546d;
+  --cui-secondary-text-emphasis: #cbd5e1;
+  --cui-secondary-bg-subtle: var(--tc-elevated);
+  --cui-secondary-border-subtle: var(--tc-border);
+  --cui-light-text-emphasis: var(--tc-text);
+  --cui-light-bg-subtle: var(--tc-elevated);
+  --cui-light-border-subtle: var(--tc-border);
+  --cui-dark-text-emphasis: var(--tc-text);
+  --cui-dark-bg-subtle: var(--tc-background);
+  --cui-dark-border-subtle: var(--tc-border);
+  --cui-form-valid-color: var(--tc-positive);
+  --cui-form-valid-border-color: var(--tc-positive);
+  --cui-form-invalid-color: var(--tc-danger);
+  --cui-form-invalid-border-color: var(--tc-danger);
+
+  .header,
+  .footer {
+    color: var(--tc-text);
+  }
+  .breadcrumb {
+    --cui-breadcrumb-divider-color: var(--tc-muted);
+    --cui-breadcrumb-item-active-color: var(--tc-muted);
+  }
+  .card,
+  .modal-content {
+    color: var(--tc-text);
+  }
+  .card {
+    --cui-card-border-color: var(--tc-border);
+  }
+  .modal-content {
+    border-color: var(--tc-border);
+  }
+  // CoreUI renders HTML chart tooltips by default, in addition to Chart.js options.
+  .chartjs-tooltip {
+    --cui-chartjs-tooltip-bg: var(--tc-elevated);
+    --cui-chartjs-tooltip-color: var(--tc-text);
+    border: 1px solid var(--tc-border);
+    box-shadow: var(--tc-shadow);
+    max-width: min(320px, calc(100vw - 32px));
+    .chartjs-tooltip-body-item {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
+  .modal-content,
+  .dropdown-menu,
+  .popover {
+    background-color: var(--tc-elevated);
+    --cui-popover-bg: var(--tc-elevated);
+    --cui-popover-body-color: var(--tc-text);
+    --cui-popover-border-color: var(--tc-border);
+  }
+  .dropdown-menu {
+    --cui-dropdown-color: var(--tc-text);
+    --cui-dropdown-link-color: var(--tc-text);
+    --cui-dropdown-link-hover-color: var(--tc-text);
+    --cui-dropdown-link-hover-bg: var(--tc-border);
+    --cui-dropdown-link-active-bg: var(--tc-action);
+    --cui-dropdown-link-active-color: var(--tc-background);
+    --cui-dropdown-link-disabled-color: var(--tc-muted);
+    --cui-dropdown-header-color: var(--tc-muted);
+    --cui-dropdown-border-color: var(--tc-border);
+  }
+  .tooltip {
+    --cui-tooltip-bg: var(--tc-elevated);
+    --cui-tooltip-color: var(--tc-text);
+    --cui-tooltip-opacity: 1;
+    .tooltip-inner {
+      border: 1px solid var(--tc-border);
+      box-shadow: var(--tc-shadow);
+    }
+  }
+  .login-brand {
+    background: var(--tc-elevated);
+    color: var(--tc-text);
+    p,
+    .login-brand-caption {
+      color: var(--tc-muted);
+    }
+  }
+  .login-brand-icon {
+    color: var(--tc-background);
+  }
+  .smart-sidebar.sidebar {
+    --cui-sidebar-bg: var(--tc-elevated);
+    --cui-sidebar-color: var(--tc-text);
+    --cui-sidebar-brand-color: var(--tc-text);
+    --cui-sidebar-border-color: var(--tc-border);
+    .sidebar-nav {
+      --cui-sidebar-nav-link-color: #cbd5e1;
+      --cui-sidebar-nav-link-icon-color: var(--tc-muted);
+      --cui-sidebar-nav-link-active-bg: var(--tc-action);
+      --cui-sidebar-nav-link-active-color: var(--tc-background);
+      --cui-sidebar-nav-link-active-icon-color: var(--tc-background);
+      --cui-sidebar-nav-link-hover-bg: var(--tc-border);
+      --cui-sidebar-nav-link-hover-color: var(--tc-text);
+      --cui-sidebar-nav-link-hover-icon-color: var(--tc-text);
+    }
+    .smart-brand-label .small {
+      color: var(--tc-muted);
+    }
+    .smart-sidebar-pin {
+      color: #cbd5e1;
+      &:hover {
+        background: var(--tc-border);
+        color: var(--tc-text);
+      }
+      &[aria-pressed='true'] {
+        color: var(--tc-focus);
+      }
+    }
+  }
+  .form-control,
+  .form-select,
+  .input-group-text {
+    color: var(--tc-text);
+    background-color: var(--tc-surface);
+    border-color: var(--tc-border);
+  }
+  .form-control::placeholder {
+    color: var(--tc-muted);
+    opacity: 1;
+  }
+  .form-control:disabled,
+  .form-select:disabled,
+  .form-control[readonly] {
+    background-color: var(--tc-elevated);
+    color: var(--tc-muted);
+    opacity: 1;
+  }
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--tc-focus);
+    box-shadow: 0 0 0 0.2rem rgb(59 130 246 / 25%);
+  }
+  .form-check-input {
+    background-color: var(--tc-surface);
+    border-color: var(--tc-muted);
+    &:checked {
+      background-color: #2563eb;
+      border-color: var(--tc-action);
+    }
+  }
+  .table {
+    --cui-table-color: var(--tc-text);
+    --cui-table-bg: var(--tc-surface);
+    --cui-table-border-color: var(--tc-border);
+    --cui-table-striped-color: var(--tc-text);
+    --cui-table-striped-bg: rgb(148 163 184 / 4%);
+    --cui-table-hover-color: var(--tc-text);
+    --cui-table-hover-bg: rgb(59 130 246 / 9%);
+    --cui-table-active-color: var(--tc-text);
+    --cui-table-active-bg: var(--tc-elevated);
+  }
+  .pagination {
+    --cui-pagination-color: var(--tc-focus);
+    --cui-pagination-bg: var(--tc-surface);
+    --cui-pagination-border-color: var(--tc-border);
+    --cui-pagination-hover-bg: var(--tc-elevated);
+    --cui-pagination-hover-color: var(--tc-text);
+    --cui-pagination-hover-border-color: var(--tc-border);
+    --cui-pagination-active-bg: var(--tc-action);
+    --cui-pagination-active-border-color: var(--tc-action);
+    --cui-pagination-active-color: var(--tc-background);
+    --cui-pagination-disabled-bg: var(--tc-background);
+    --cui-pagination-disabled-color: var(--tc-muted);
+    --cui-pagination-disabled-border-color: var(--tc-border);
+  }
+  .btn-secondary {
+    --cui-btn-bg: var(--tc-border);
+    --cui-btn-border-color: var(--tc-border);
+    --cui-btn-color: var(--tc-text);
+    --cui-btn-hover-bg: #354963;
+    --cui-btn-hover-color: var(--tc-text);
+    --cui-btn-active-bg: #354963;
+    --cui-btn-active-color: var(--tc-text);
+    --cui-btn-disabled-bg: var(--tc-border);
+    --cui-btn-disabled-border-color: var(--tc-border);
+    --cui-btn-disabled-color: var(--tc-muted);
+  }
+  @each $name,
+    $color
+      in (
+        primary: var(--tc-action),
+        success: var(--tc-positive),
+        danger: var(--tc-danger),
+        warning: var(--tc-warning),
+        info: var(--cui-info)
+      )
+  {
+    .btn-#{$name} {
+      --cui-btn-bg: #{$color};
+      --cui-btn-border-color: #{$color};
+      --cui-btn-color: var(--tc-background);
+      --cui-btn-hover-bg: color-mix(in srgb, #{$color}, white 15%);
+      --cui-btn-hover-border-color: #{$color};
+      --cui-btn-hover-color: var(--tc-background);
+      --cui-btn-active-bg: #{$color};
+      --cui-btn-active-border-color: #{$color};
+      --cui-btn-active-color: var(--tc-background);
+      --cui-btn-disabled-bg: #{$color};
+      --cui-btn-disabled-border-color: #{$color};
+      --cui-btn-disabled-color: var(--tc-background);
+    }
+    .btn-outline-#{$name} {
+      --cui-btn-color: #{$color};
+      --cui-btn-border-color: #{$color};
+      --cui-btn-hover-bg: #{$color};
+      --cui-btn-hover-border-color: #{$color};
+      --cui-btn-hover-color: var(--tc-background);
+      --cui-btn-active-bg: #{$color};
+      --cui-btn-active-color: var(--tc-background);
+      --cui-btn-disabled-color: #{$color};
+      --cui-btn-disabled-border-color: #{$color};
+    }
+    .badge.bg-#{$name},
+    .badge.text-bg-#{$name} {
+      color: var(--tc-background) !important;
+    }
+  }
+  .btn-outline-secondary {
+    --cui-btn-color: var(--tc-muted);
+    --cui-btn-border-color: var(--tc-muted);
+    --cui-btn-hover-bg: var(--tc-border);
+    --cui-btn-hover-color: var(--tc-text);
+    --cui-btn-active-bg: var(--tc-border);
+    --cui-btn-active-color: var(--tc-text);
+    --cui-btn-disabled-color: var(--tc-muted);
+  }
+  .btn-link {
+    --cui-btn-color: var(--tc-action);
+    --cui-btn-hover-color: var(--tc-focus);
+  }
+  .badge.bg-secondary {
+    color: var(--tc-text);
+    background-color: var(--tc-border) !important;
+  }
+  .badge.bg-light,
+  .badge.bg-dark {
+    background-color: var(--tc-elevated) !important;
+    color: var(--tc-text) !important;
+    border: 1px solid var(--tc-border);
+  }
+  .btn:focus-visible,
+  .nav-link:focus-visible,
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--tc-focus);
+    outline-offset: 3px;
+  }
+}
+
+// No layout properties participate in theme transitions. Existing sidebar/entry motion stays intact.
+body,
+.header,
+.footer,
+.card,
+.modal-content,
+.dropdown-menu,
+.form-control,
+.form-select,
+.input-group-text,
+.table > :not(caption) > * > *,
+.login-brand {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}

@@ -1,3 +1,4 @@
+import CModal from '../../components/management/AppModal'
 import React, { useEffect, useRef, useState } from 'react'
 import {
   CAlert,
@@ -9,7 +10,6 @@ import {
   CFormInput,
   CFormLabel,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalFooter,
   CModalHeader,
@@ -344,6 +344,7 @@ const BackupContent = () => {
       </CCard>
       <CModal
         visible={!!dialog}
+        size={dialog?.kind === 'restore' ? 'lg' : 'sm'}
         onClose={close}
         backdrop="static"
         keyboard={!busy}

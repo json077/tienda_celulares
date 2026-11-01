@@ -1,4 +1,5 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react'
+import CModal from '../../components/management/AppModal'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
   CBadge,
@@ -9,7 +10,6 @@ import {
   CFormInput,
   CFormLabel,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalFooter,
   CModalHeader,
@@ -426,6 +426,7 @@ const Products = () => {
           !!statusProduct &&
           can(Number(statusProduct.activo) === 1 ? 'PRODUCTOS_ELIMINAR' : 'PRODUCTOS_EDITAR')
         }
+        size="sm"
         backdrop="static"
         keyboard={!operation}
         onClose={() => {

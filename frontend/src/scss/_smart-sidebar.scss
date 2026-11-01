@@ -1,0 +1,182 @@
+// Width and label changes are local to the sidebar. Only pinning changes layout space.
+.smart-sidebar.sidebar {
+  --cui-sidebar-width: 240px;
+  --cui-sidebar-bg: #101c35;
+  --cui-sidebar-nav-link-active-bg: #2563eb;
+  overflow: hidden;
+  transition:
+    width 225ms ease,
+    margin-inline-start 225ms ease,
+    box-shadow 225ms ease;
+
+  .sidebar-header {
+    position: relative;
+    flex: 0 0 auto;
+    display: block;
+    padding: 8px;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    height: 48px;
+    width: 222px;
+    gap: 12px;
+    margin: 0;
+  }
+
+  .smart-brand-icon {
+    flex: 0 0 24px;
+    margin-inline-start: 14px;
+  }
+
+  .smart-brand-label {
+    font-size: 0.875rem;
+    .small {
+      color: #a8bad6;
+      font-size: 0.65rem;
+    }
+  }
+
+  .btn-close {
+    position: absolute;
+    top: 16px;
+    inset-inline-end: 14px;
+    margin: 0;
+  }
+
+  .sidebar-nav {
+    --cui-sidebar-nav-link-color: #c4d0e5;
+    --cui-sidebar-nav-link-icon-color: #8da5c9;
+    --cui-sidebar-nav-link-active-bg: #2563eb;
+    --cui-sidebar-nav-link-active-color: #fff;
+    --cui-sidebar-nav-link-active-icon-color: #fff;
+    --cui-sidebar-nav-link-hover-color: #fff;
+    --cui-sidebar-nav-link-hover-bg: rgb(255 255 255 / 7%);
+    --cui-sidebar-nav-link-hover-icon-color: #fff;
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 8px;
+    overflow-x: hidden;
+  }
+
+  .nav-link,
+  .smart-sidebar-pin {
+    min-height: 42px;
+    padding: 9px 14px;
+    gap: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .nav-icon,
+  .smart-pin-icon {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 20px;
+    margin: 0;
+  }
+
+  .smart-sidebar-label {
+    opacity: 1;
+    transition: opacity 225ms ease;
+  }
+
+  .nav-group-items {
+    padding-inline: 0;
+  }
+
+  .nav-title {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .nav-link:focus-visible,
+  .sidebar-brand:focus-visible,
+  .smart-sidebar-pin:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: -2px;
+  }
+}
+
+.smart-sidebar-pin {
+  align-items: center;
+  width: 100%;
+  color: #c4d0e5;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5rem;
+  text-align: start;
+  font-size: 0.8rem;
+
+  &:hover {
+    color: #fff;
+    background: rgb(255 255 255 / 7%);
+  }
+
+  &[aria-pressed='true'] {
+    color: #93c5fd;
+  }
+}
+
+@media (min-width: 992px) {
+  .smart-sidebar.sidebar {
+    width: 68px;
+
+    &:not(.sidebar-end) {
+      margin-inline-start: 0;
+    }
+
+    &[data-expanded='true'] {
+      width: 240px;
+    }
+
+    &[data-expanded='false'] {
+      .smart-sidebar-label,
+      .nav-group-toggle::after,
+      .nav-title {
+        opacity: 0;
+      }
+      .nav-group-toggle::after {
+        display: none;
+      }
+    }
+
+    &[data-expanded='true'][data-pinned='false'] {
+      box-shadow: 8px 0 24px rgb(16 28 53 / 18%);
+    }
+
+    & ~ .wrapper {
+      --cui-sidebar-occupy-start: 68px;
+      padding-inline-start: 68px;
+      transition: padding-inline-start 225ms ease;
+    }
+
+    &[data-pinned='true'] ~ .wrapper {
+      --cui-sidebar-occupy-start: 240px;
+      padding-inline-start: 240px;
+    }
+  }
+}
+
+@media (max-width: 991.98px) {
+  .smart-sidebar.sidebar {
+    --cui-sidebar-width: min(280px, calc(100vw - 48px));
+
+    .sidebar-brand {
+      width: calc(100% - 40px);
+      gap: 8px;
+    }
+    .smart-brand-icon {
+      margin-inline-start: 6px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smart-sidebar.sidebar,
+  .smart-sidebar.sidebar .smart-sidebar-label,
+  .smart-sidebar.sidebar ~ .wrapper {
+    transition: none !important;
+  }
+}

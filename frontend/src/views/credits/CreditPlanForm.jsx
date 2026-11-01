@@ -208,7 +208,7 @@ const CreditPlanForm = ({ sales, busy, error, onSave, onRefresh, onCancel }) => 
           disabled={busy || !!invalid}
           onChange={(e) => setConfirmed(e.target.checked)}
         />
-        <div className="d-flex flex-wrap gap-2">
+        <div className="modal-actions">
           <CButton
             type="button"
             color="secondary"

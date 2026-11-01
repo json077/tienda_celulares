@@ -81,12 +81,14 @@ const SaleConfirmation = ({ sale, stock, units, saving, onConfirm, onCancel }) =
         onChange={(e) => setReviewed(e.target.checked)}
         label="He revisado cliente, sucursal, productos, IMEI e importes y autorizo confirmar la venta"
       />
-      <CButton className="mt-3 me-2" color="secondary" disabled={saving} onClick={onCancel}>
-        Volver
-      </CButton>
-      <CButton className="mt-3" color="primary" disabled={saving || !reviewed} onClick={submit}>
-        Confirmar venta y emitir factura
-      </CButton>
+      <div className="modal-actions">
+        <CButton color="secondary" disabled={saving} onClick={onCancel}>
+          Volver
+        </CButton>
+        <CButton color="primary" disabled={saving || !reviewed} onClick={submit}>
+          Confirmar venta y emitir factura
+        </CButton>
+      </div>
     </>
   )
 }

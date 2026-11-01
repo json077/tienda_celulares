@@ -1,4 +1,6 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from 'react'
+import CModal from '../../components/management/AppModal'
+import { ModalPresence } from '../../components/management/AppModal'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
   CButton,
@@ -8,7 +10,6 @@ import {
   CFormInput,
   CFormLabel,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalHeader,
   CModalTitle,
@@ -560,18 +561,20 @@ const Inventory = () => {
           </CTabs>
         </CCardBody>
       </CCard>
-      {operation && (
-        <InventoryOperationModal
-          kind={operation.kind}
-          row={operation.row}
-          saving={saving}
-          error={operationError}
-          onConfirm={saveOperation}
-          onClose={() => {
-            if (!saving) setOperation(null)
-          }}
-        />
-      )}
+      <ModalPresence>
+        {operation && (
+          <InventoryOperationModal
+            kind={operation.kind}
+            row={operation.row}
+            saving={saving}
+            error={operationError}
+            onConfirm={saveOperation}
+            onClose={() => {
+              if (!saving) setOperation(null)
+            }}
+          />
+        )}
+      </ModalPresence>
       <CModal
         visible={!!movement}
         onClose={() => setMovement(null)}

@@ -1,4 +1,24 @@
-export const initialDashboardFilters = { desde: '2026-10-01', hasta: '2026-10-31', id_sucursal: '' }
+// Snapshot the current calendar month in Nicaragua when the Dashboard is opened.
+export function currentDashboardPeriod(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'America/Managua',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now)
+  const year = parts.find((p) => p.type === 'year').value
+  const month = parts.find((p) => p.type === 'month').value
+  const lastDay = new Date(Date.UTC(Number(year), Number(month), 0)).getUTCDate()
+  return { desde: `${year}-${month}-01`, hasta: `${year}-${month}-${lastDay}`, id_sucursal: '' }
+}
+
+export function dashboardPeriodLabel(period) {
+  const month = new Intl.DateTimeFormat('es-NI', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${period.desde}T00:00:00Z`))
+  return `${month} · ${period.desde} al ${period.hasta} · Todas las sucursales autorizadas`
+}
 export const saleStates = ['CONFIRMADA', 'BORRADOR', 'ANULADA']
 
 export function validateDashboardFilters(filters) {
@@ -22,13 +42,18 @@ export function validateDashboardFilters(filters) {
 export function buildDashboard(ventas, ranking, existencias) {
   const confirmed = ventas.filter((r) => r.estado === 'CONFIRMADA')
   const daily = new Map()
+  const monetaryDaily = new Map()
+  for (const row of ventas) {
+    if (!['CONFIRMADA', 'ANULADA'].includes(row.estado)) continue
+    const fecha = row.fecha.slice(0, 10)
+    const amounts = monetaryDaily.get(fecha) || { CONFIRMADA: 0, ANULADA: 0 }
+    amounts[row.estado] += Math.round(Number(row.total) * 100)
+    monetaryDaily.set(fecha, amounts)
+  }
   for (const row of confirmed) {
     const day = row.fecha.slice(0, 10)
     daily.set(day, (daily.get(day) || 0) + Math.round(Number(row.total) * 100))
   }
-  const products = [...ranking].sort(
-    (a, b) => Number(b.cantidad) - Number(a.cantidad) || a.sku.localeCompare(b.sku),
-  )
   return {
     total: confirmed.reduce((n, r) => n + Math.round(Number(r.total) * 100), 0) / 100,
     count: confirmed.length,
@@ -37,7 +62,14 @@ export function buildDashboard(ventas, ranking, existencias) {
     daily: [...daily]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([fecha, cents]) => ({ fecha, total: cents / 100 })),
-    products: products.slice(0, 10),
+    products: ranking.slice(0, 10),
+    monetaryDaily: [...monetaryDaily]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([fecha, amounts]) => ({
+        fecha,
+        CONFIRMADA: amounts.CONFIRMADA / 100,
+        ANULADA: amounts.ANULADA / 100,
+      })),
     states: saleStates.map((estado) => ({
       estado,
       cantidad: ventas.filter((r) => r.estado === estado).length,

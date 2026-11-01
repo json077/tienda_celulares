@@ -70,6 +70,7 @@ async function harness(path, dependencies) {
       if (name === '@coreui/react') return new Proxy({}, { get: (_, key) => String(key) })
       if (Object.hasOwn(dependencies, name)) return dependencies[name]
       if (name.includes('ManagementUI')) return { PageHeading: 'PageHeading' }
+      if (name.endsWith('/AppModal')) return { default: 'CModal', ModalPresence: 'ModalPresence' }
       if (name.includes('icons-react')) return { CIcon: 'CIcon' }
       return require(name)
     },
@@ -110,29 +111,32 @@ async function harness(path, dependencies) {
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 const text = (children) => JSON.stringify(children)
 
-test('Dashboard: permisos, formulario, fechas aplicadas y cancelación de respuestas tardías', async () => {
+test('Dashboard: sin filtros, período visible, permisos, recarga y cancelación de respuestas tardías', async () => {
   const model = await loadModel('../src/views/dashboard/dashboardModel.js')
+  const period = model.currentDashboardPeriod(new Date('2026-10-31T18:00:00Z'))
   let allowed = false,
     calls = [],
-    resolveOld
+    resolveOld,
+    shouldWait = true
   const service = {
     catalog: async () => ({ data: { branches: [{ id_sucursal: 1, nombre: 'Central' }] } }),
     read: async (type, filters, signal) => {
       calls.push({ type, filters, signal })
-      if (filters.desde === '2026-10-01' && type === 'ventas')
+      if (shouldWait && type === 'ventas')
         return new Promise((resolve) => {
           resolveOld = resolve
         })
       return { data: { rows: [] } }
     },
   }
-  const h = await harness('../src/views/dashboard/Dashboard.jsx', {
+  const dependencies = {
     '../../contexts/AuthContext': { useAuth: () => ({ can: () => allowed }) },
     '../../services/reportService': { reportService: service },
     '../../services/api': { apiErrorMessage: (e) => e.message },
     './DashboardResults': { default: 'DashboardResults' },
-    './dashboardModel': model,
-  })
+    './dashboardModel': { ...model, currentDashboardPeriod: () => ({ ...period }) },
+  }
+  const h = await harness('../src/views/dashboard/Dashboard.jsx', dependencies)
   h.render()
   h.effects()
   assert.equal(calls.length, 0)
@@ -141,39 +145,105 @@ test('Dashboard: permisos, formulario, fechas aplicadas y cancelación de respue
   h.effects()
   await flush()
   h.render()
-  h.effects()
-  await flush()
   assert.equal(calls.length, 3)
-  h.render()
-  h.find('CFormInput', (p) => p.id === 'dashboard-desde')[0].onChange({
-    target: { value: '2026-09-01' },
-  })
-  h.find('CFormSelect')[0].onChange({ target: { value: '1' } })
-  h.render()
-  h.find('CForm')[0].onSubmit({ preventDefault() {} })
-  h.render()
-  h.effects()
-  await flush()
-  h.render()
-  assert.equal(calls.length, 6)
+  assert.equal(h.find('CForm').length, 0)
+  assert.equal(h.find('CFormInput').length, 0)
+  assert.equal(h.find('CFormSelect').length, 0)
+  assert.ok(h.find('PageHeading')[0].description.includes('octubre de 2026'))
+  assert.ok(h.find('PageHeading')[0].description.includes('Todas las sucursales autorizadas'))
+  assert.equal(calls[0].filters.desde, '2026-10-01')
+  assert.equal(calls[0].filters.id_sucursal, '')
+  assert.equal(calls[2].filters.desde, undefined)
+  assert.equal(Object.keys(calls[2].filters).length, 0)
+  h.unmount()
   assert.equal(calls[0].signal.aborted, true)
-  const result = h.find('DashboardResults')[0]
-  assert.equal(result.filters.desde, '2026-09-01')
-  assert.equal(result.filters.id_sucursal, '1')
-  assert.equal(calls[5].filters.desde, undefined)
   resolveOld({ data: { rows: [] } })
   await flush()
   h.render()
-  assert.equal(h.find('DashboardResults')[0].filters.desde, '2026-09-01')
-  h.find('CFormInput', (p) => p.id === 'dashboard-hasta')[0].onChange({
-    target: { value: '2026-01-01' },
+  assert.equal(h.find('DashboardResults').length, 0)
+  shouldWait = false
+  const ready = await harness('../src/views/dashboard/Dashboard.jsx', dependencies)
+  ready.render()
+  ready.effects()
+  await flush()
+  ready.render()
+  assert.equal(ready.find('DashboardResults')[0].data.count, 0)
+  const before = calls.length
+  ready.find('CButton')[0].onClick()
+  ready.render()
+  ready.effects()
+  await flush()
+  ready.render()
+  assert.equal(calls.length, before + 3)
+  assert.equal(ready.find('DashboardResults')[0].filters.hasta, '2026-10-31')
+  allowed = false
+  ready.render()
+  assert.equal(ready.find('DashboardResults').length, 0)
+  ready.unmount()
+})
+
+test('Login: diseño nuevo conserva campos, autenticación, errores, bloqueo y redirección', async () => {
+  let loading = false,
+    isAuthenticated = false,
+    calls = [],
+    finish
+  const h = await harness('../src/views/authentication/login/Login.jsx', {
+    '../../../contexts/AuthContext': {
+      useAuth: () => ({
+        loading,
+        isAuthenticated,
+        login: async (...args) => {
+          calls.push(args)
+          await new Promise((resolve, reject) => {
+            finish = { resolve, reject }
+          })
+        },
+      }),
+    },
+    'react-router-dom': { Navigate: 'Navigate' },
   })
   h.render()
-  h.find('CForm')[0].onSubmit({ preventDefault() {} })
+  assert.equal(h.find('main')[0].className, 'login-page')
+  const inputs = () => h.find('CFormInput')
+  assert.equal(inputs()[0].required, true)
+  assert.equal(inputs()[0].autoComplete, 'username')
+  assert.equal(inputs()[1].required, true)
+  assert.equal(inputs()[1].type, 'password')
+  assert.equal(inputs()[1].autoComplete, 'current-password')
+  inputs()[0].onChange({ target: { value: '  operador  ' } })
+  inputs()[1].onChange({ target: { value: ' contraseña de prueba ' } })
   h.render()
-  assert.ok(h.find('CAlert').some((p) => text(p.children).includes('Desde debe ser anterior')))
-  assert.equal(calls.length, 6)
-  h.unmount()
+  h.find('CButton', (p) => p.type === 'button')[0].onClick()
+  h.render()
+  assert.equal(inputs()[1].type, 'text')
+  const submit = h.find('CForm')[0].onSubmit
+  const first = submit({ preventDefault() {} }),
+    second = submit({ preventDefault() {} })
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0][0], 'operador')
+  assert.equal(calls[0][1], ' contraseña de prueba ')
+  h.render()
+  assert.ok(inputs().every((p) => p.disabled))
+  assert.equal(h.find('CButton', (p) => p.type === 'submit')[0].disabled, true)
+  finish.reject(new Error('Credenciales incorrectas'))
+  await Promise.all([first, second])
+  h.render()
+  assert.ok(h.find('CAlert').some((p) => text(p.children).includes('Credenciales incorrectas')))
+  assert.equal(h.find('CButton', (p) => p.type === 'submit')[0].disabled, false)
+  const fallback = h.find('CForm')[0].onSubmit({ preventDefault() {} })
+  finish.reject({})
+  await fallback
+  h.render()
+  assert.ok(h.find('CAlert').some((p) => text(p.children).includes('No se pudo iniciar sesión.')))
+  loading = true
+  h.render()
+  assert.equal(h.find('CForm').length, 0)
+  assert.equal(h.find('CSpinner').length, 1)
+  loading = false
+  isAuthenticated = true
+  h.render()
+  assert.equal(h.find('Navigate')[0].to, '/dashboard')
+  assert.equal(h.find('Navigate')[0].replace, true)
 })
 
 test('Respaldos: confirmaciones reales, revocación, doble clic y éxito preservado si falla recarga', async () => {
@@ -284,9 +354,12 @@ test('CoreUI real: cabeceras, vacíos, advertencias, filtros y acceso denegado',
     assert.ok(denied.includes('permiso de consulta de reportes'))
     assert.ok(!denied.includes('dashboard-desde'))
     const dashboard = render(Dashboard, ['REPORTE_VER'])
-    assert.ok(dashboard.includes('2026-10-01'))
-    assert.ok(dashboard.includes('2026-10-31'))
-    assert.ok(dashboard.includes('dashboard-branch'))
+    const { currentDashboardPeriod, dashboardPeriodLabel } = await server.ssrLoadModule(
+      '/src/views/dashboard/dashboardModel.js',
+    )
+    assert.ok(dashboard.includes(dashboardPeriodLabel(currentDashboardPeriod())))
+    assert.ok(!dashboard.includes('type="date"'))
+    assert.ok(!dashboard.includes('dashboard-branch'))
     assert.ok(render(Backups, []).includes('No tienes permiso'))
     const backups = render(Backups, ['BACKUP_CREAR'])
     for (const label of [

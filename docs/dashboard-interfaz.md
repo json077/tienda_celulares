@@ -24,9 +24,10 @@
 Ruta: `/#/dashboard`. La página de inicio sigue disponible para usuarios autenticados;
 los datos requieren `REPORTE_VER`. No se conceden permisos nuevos.
 
-Período inicial: **01/10/2026 al 31/10/2026**, con todas las sucursales autorizadas.
-Cambiar fechas/sucursal y pulsar **Aplicar filtros**. La leyenda de período aplicado
-corresponde a los gráficos mostrados, no a los cambios aún sin aplicar del formulario.
+El Dashboard consulta el **mes actual en America/Managua**, con todas las sucursales
+autorizadas por los endpoints existentes. El subtítulo muestra el mes y las fechas
+inclusivas. No hay selectores de fechas ni sucursal. **Actualizar resumen** vuelve
+a calcular el mes vigente y consulta nuevamente los datos. Stock sigue siendo actual.
 
 Se reutilizan estos GET existentes, con la sesión actual:
 
@@ -106,11 +107,12 @@ aplicación, no ejecuta escrituras y no crea/restaura respaldos.
 Para revisión manual, iniciar backend y frontend con sus comandos existentes
 (`npm.cmd start` en cada carpeta) y abrir la URL que muestre Vite:
 
-1. Iniciar sesión con `REPORTE_VER`, abrir Dashboard y revisar octubre de 2026.
+1. Iniciar sesión con `REPORTE_VER`, abrir Dashboard y revisar el mes del subtítulo.
    Comparar **Ver datos del gráfico** con Ventas y Ranking en Reportes.
-2. Aplicar otra sucursal autorizada y un período vacío. Stock puede seguir mostrando
-   unidades porque es actual. Probar una sesión sin `REPORTE_VER`: no hay gráficos
-   ni solicitudes de datos del Dashboard.
+2. Pulsar Actualizar resumen. Si el mes no tiene ventas, los gráficos muestran el
+   estado vacío; stock puede seguir mostrando unidades porque es actual. Probar una
+   sesión sin `REPORTE_VER`: no hay gráficos ni solicitudes de datos del Dashboard.
+   Los filtros de período y sucursal siguen disponibles en Reportes.
 3. En Reportes, probar los ocho selectores y verificar filtros, tarjetas, tabla,
    vacíos y XLSX. Revisar también una ventana estrecha y el tema oscuro.
 4. En Copias de seguridad, revisar historial, fechas, tamaño, estados y permisos.

@@ -147,9 +147,11 @@ const PaymentForm = ({ sale, payments, session, rate, busy, onRate, onSave }) =>
           disabled={!!invalid}
           onChange={(e) => setChecked(e.target.checked)}
         />
-        <CButton type="submit" color="primary" disabled={busy || !checked || !!invalid}>
-          {busy ? 'Procesando…' : 'Registrar pago'}
-        </CButton>
+        <div className="modal-actions">
+          <CButton type="submit" color="primary" disabled={busy || !checked || !!invalid}>
+            {busy ? 'Procesando…' : 'Registrar pago'}
+          </CButton>
+        </div>
       </fieldset>
     </CForm>
   )

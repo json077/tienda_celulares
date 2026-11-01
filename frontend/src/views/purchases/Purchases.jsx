@@ -1,3 +1,4 @@
+import CModal from '../../components/management/AppModal'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
@@ -9,7 +10,6 @@ import {
   CFormInput,
   CFormLabel,
   CFormSelect,
-  CModal,
   CModalBody,
   CModalFooter,
   CModalHeader,

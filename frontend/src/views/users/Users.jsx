@@ -1,3 +1,5 @@
+import CModal from '../../components/management/AppModal'
+import { ModalPresence } from '../../components/management/AppModal'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CAlert,
@@ -8,7 +10,6 @@ import {
   CForm,
   CFormInput,
   CFormSelect,
-  CModal,
   CModalHeader,
   CModalTitle,
   CRow,
@@ -367,43 +368,51 @@ const Users = () => {
           )}
         </CCardBody>
       </CCard>
-      {editor && (
-        <CModal visible alignment="center" size="lg" backdrop="static" onClose={close}>
-          <CModalHeader closeButton={!operation}>
-            <CModalTitle>{titles[editor.type]}</CModalTitle>
-          </CModalHeader>
-          {['create', 'edit'].includes(editor.type) && (
-            <UserForm
-              user={editor.target}
-              catalog={editor.catalog}
-              saving={operation === 'saving'}
-              error={formError}
-              onSave={save}
-              onCancel={close}
-            />
-          )}
-          {editor.type === 'detail' && <UserDetail user={editor.target} />}
-          {editor.type === 'state' && (
-            <UserState
-              user={editor.target}
-              saving={operation === 'saving'}
-              error={formError}
-              onConfirm={save}
-              onCancel={close}
-            />
-          )}
-          {editor.type === 'roles' && (
-            <UserRoles
-              user={editor.target}
-              catalog={editor.catalog}
-              saving={operation === 'saving'}
-              error={formError}
-              onConfirm={save}
-              onCancel={close}
-            />
-          )}
-        </CModal>
-      )}
+      <ModalPresence>
+        {editor && (
+          <CModal
+            visible
+            alignment="center"
+            size={editor.type === 'state' ? 'sm' : 'lg'}
+            backdrop="static"
+            onClose={close}
+          >
+            <CModalHeader closeButton={!operation}>
+              <CModalTitle>{titles[editor.type]}</CModalTitle>
+            </CModalHeader>
+            {['create', 'edit'].includes(editor.type) && (
+              <UserForm
+                user={editor.target}
+                catalog={editor.catalog}
+                saving={operation === 'saving'}
+                error={formError}
+                onSave={save}
+                onCancel={close}
+              />
+            )}
+            {editor.type === 'detail' && <UserDetail user={editor.target} />}
+            {editor.type === 'state' && (
+              <UserState
+                user={editor.target}
+                saving={operation === 'saving'}
+                error={formError}
+                onConfirm={save}
+                onCancel={close}
+              />
+            )}
+            {editor.type === 'roles' && (
+              <UserRoles
+                user={editor.target}
+                catalog={editor.catalog}
+                saving={operation === 'saving'}
+                error={formError}
+                onConfirm={save}
+                onCancel={close}
+              />
+            )}
+          </CModal>
+        )}
+      </ModalPresence>
     </>
   )
 }

@@ -9,6 +9,30 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
+    <script>
+      // Apply the existing CoreUI preference before the first paint, including the public Login.
+      ;(() => {
+        const requested = new URLSearchParams(location.href.split('?')[1]).get('theme')
+        let stored
+        try {
+          stored = localStorage.getItem('coreui-free-react-admin-template-theme')
+        } catch {
+          // System preference remains usable when storage is blocked.
+        }
+        const preference = ['light', 'dark', 'auto'].includes(requested) ? requested : stored
+        const dark =
+          preference === 'dark' ||
+          ((!preference || preference === 'auto') &&
+            matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.coreuiTheme = dark ? 'dark' : 'light'
+      })()
+    </script>
+    <style>
+      html[data-coreui-theme='dark'] {
+        background-color: #0b1220;
+        color-scheme: dark;
+      }
+    </style>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="Control de inventario y facturación de Tienda Celulares" />

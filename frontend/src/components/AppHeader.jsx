@@ -40,6 +40,9 @@ const AppHeader = () => {
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
       <CContainer className="border-bottom px-4" fluid>
         <CHeaderToggler
+          id="sidebar-menu-toggle"
+          className="d-lg-none"
+          aria-controls="app-sidebar"
           aria-label="Abrir o cerrar menú lateral"
           aria-expanded={!!sidebarShow}
           onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })}

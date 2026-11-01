@@ -1,0 +1,254 @@
+:root {
+  --tc-modal-surface: #fff;
+  --tc-modal-text: var(--cui-body-color);
+  --tc-modal-border: var(--cui-border-color);
+  --tc-modal-shadow: 0 24px 70px rgb(16 28 53 / 24%), 0 6px 20px rgb(16 28 53 / 10%);
+  --tc-modal-overlay: rgb(16 28 53 / 48%);
+  --tc-modal-overlay-blur: rgb(16 28 53 / 36%);
+}
+[data-coreui-theme='dark'] {
+  --tc-modal-surface: #111c2e;
+  --tc-modal-text: #f1f5f9;
+  --tc-modal-border: #26364c;
+  --tc-modal-shadow: 0 24px 80px rgb(0 0 0 / 48%), 0 6px 24px rgb(0 0 0 / 24%);
+  --tc-modal-overlay: rgb(3 8 18 / 76%);
+  --tc-modal-overlay-blur: rgb(3 8 18 / 62%);
+}
+
+// Screen-only: invoice printing keeps its existing full-page layout.
+@media screen {
+  .modal-backdrop {
+    --cui-backdrop-opacity: 1;
+    background: var(--tc-modal-overlay);
+  }
+  // Animate only presentation. The full-screen modal remains interactive as a
+  // shield, and CoreUI retains focus until both exit animations have finished.
+  .app-modal .modal-dialog {
+    animation: tc-modal-enter var(--tc-modal-enter-duration, 280ms) cubic-bezier(0.22, 1, 0.36, 1)
+      both;
+  }
+  .app-modal.closing .modal-dialog {
+    animation: tc-modal-exit var(--tc-modal-exit-duration, 220ms) cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+  }
+  .app-modal-backdrop {
+    pointer-events: none;
+    animation: tc-backdrop-enter var(--tc-modal-enter-duration, 280ms)
+      cubic-bezier(0.22, 1, 0.36, 1) both;
+    &.closing {
+      animation: tc-backdrop-exit var(--tc-modal-exit-duration, 220ms) cubic-bezier(0.4, 0, 1, 1)
+        both;
+    }
+  }
+  @keyframes tc-modal-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes tc-modal-exit {
+    from {
+      opacity: var(--tc-modal-exit-opacity, 1);
+      transform: var(--tc-modal-exit-transform, translateY(0) scale(1));
+    }
+    to {
+      opacity: 0;
+      transform: translateY(6px) scale(0.99);
+    }
+  }
+  @keyframes tc-backdrop-enter {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0);
+    }
+    to {
+      opacity: 1;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+  }
+  @keyframes tc-backdrop-exit {
+    from {
+      opacity: var(--tc-modal-exit-opacity, 1);
+      backdrop-filter: var(--tc-modal-exit-blur, blur(5px));
+      -webkit-backdrop-filter: var(--tc-modal-exit-blur, blur(5px));
+    }
+    to {
+      opacity: 0;
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0);
+    }
+  }
+  @supports ((backdrop-filter: blur(5px)) or (-webkit-backdrop-filter: blur(5px))) {
+    .modal-backdrop {
+      background: var(--tc-modal-overlay-blur);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+    }
+  }
+  .modal {
+    --cui-modal-border-radius: 16px;
+    --cui-modal-inner-border-radius: 15px;
+    --cui-modal-margin: 5vh;
+    --cui-modal-padding: clamp(1rem, 2.5vw, 1.5rem);
+    --cui-modal-header-border-color: var(--tc-modal-border);
+    --cui-modal-footer-border-color: var(--tc-modal-border);
+    --cui-modal-footer-bg: var(--tc-modal-surface);
+    overflow-y: hidden;
+
+    .modal-dialog {
+      --tc-modal-width: 680px;
+      width: calc(100% - 32px);
+      max-width: var(--tc-modal-width);
+      height: auto;
+      margin: 5vh auto;
+      margin-block: 5dvh;
+      &.modal-sm {
+        --tc-modal-width: 420px;
+      }
+      &.modal-lg {
+        --tc-modal-width: 680px;
+      }
+      &.modal-xl {
+        --tc-modal-width: 1040px;
+      }
+    }
+    .modal-dialog-centered {
+      min-height: 90vh;
+      min-height: 90dvh;
+    }
+    .modal-content {
+      max-height: 90vh;
+      max-height: 90dvh;
+      min-width: 0;
+      color: var(--tc-modal-text);
+      background: var(--tc-modal-surface);
+      border: 1px solid var(--tc-modal-border);
+      border-radius: 16px;
+      box-shadow: var(--tc-modal-shadow);
+      overflow: hidden;
+    }
+    .modal-content > form {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .modal-header,
+    .modal-footer {
+      flex: 0 0 auto;
+      padding: 1rem var(--cui-modal-padding);
+      background: var(--tc-modal-surface);
+      border-color: var(--tc-modal-border);
+    }
+    .modal-title {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 1.125rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .modal-header .btn-close {
+      flex: 0 0 auto;
+      margin-inline-start: 1rem;
+      margin-inline-end: 0;
+    }
+    .modal-body {
+      min-height: 0;
+      min-width: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding: var(--cui-modal-padding);
+      overflow-wrap: anywhere;
+    }
+    form,
+    fieldset {
+      min-width: 0;
+    }
+    .badge {
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .modal-footer,
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.5rem;
+      > * {
+        margin: 0;
+      }
+      .btn {
+        white-space: normal;
+      }
+    }
+    .modal-actions {
+      position: sticky;
+      bottom: calc(-1 * var(--cui-modal-padding));
+      z-index: 1;
+      margin: 1rem calc(-1 * var(--cui-modal-padding)) calc(-1 * var(--cui-modal-padding));
+      padding: 1rem var(--cui-modal-padding);
+      background: var(--tc-modal-surface);
+      border-top: 1px solid var(--tc-modal-border);
+    }
+    .btn:focus-visible,
+    .btn-close:focus-visible,
+    [role='button']:focus-visible {
+      outline: 2px solid var(--tc-focus, #2563eb);
+      outline-offset: 2px;
+    }
+    &.fade {
+      transition: opacity 200ms ease;
+    }
+    &.fade .modal-dialog {
+      transition: transform 200ms ease;
+      transform: translateY(8px);
+    }
+    &.show .modal-dialog {
+      transform: none;
+    }
+    &.modal-static .modal-dialog {
+      transform: scale(1.01);
+    }
+  }
+  @media (max-width: 575.98px) {
+    .modal .modal-dialog {
+      width: calc(100% - 24px);
+    }
+    .modal .modal-header,
+    .modal .modal-footer,
+    .modal .modal-actions {
+      padding-block: 0.85rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .app-modal .modal-dialog,
+    .app-modal-backdrop {
+      animation-duration: 0.01ms !important;
+    }
+    .app-modal .modal-dialog {
+      transform: none !important;
+    }
+    .modal.fade,
+    .modal.fade .modal-dialog,
+    .app-modal,
+    .app-modal .modal-dialog,
+    .modal-backdrop {
+      transition: none !important;
+    }
+    .modal.fade .modal-dialog,
+    .modal.modal-static .modal-dialog {
+      transform: none;
+    }
+  }
+}

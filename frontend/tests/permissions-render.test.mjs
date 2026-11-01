@@ -130,8 +130,10 @@ test('autorización visual y handlers con sesiones simuladas, sin navegador ni A
             '\nconst useState = (initial) => globalThis.__permissionHarness.state(initial, realUseState)\n'
           code +=
             'const CButton = (props) => { globalThis.__permissionHarness.buttons.push(props); return React.createElement(CoreButton, props) }\n'
-          if (/\bCModal,/.test(code)) {
-            code = code.replace(/\bCModal,/, 'CModal as CoreModal,')
+          if (/\bCModal,/.test(code) || /import CModal from/.test(code)) {
+            code = code
+              .replace(/\bCModal,/, 'CModal as CoreModal,')
+              .replace('import CModal from', 'import CoreModal from')
             code +=
               'const CModal = (props) => { globalThis.__permissionHarness.modals.push(props); return props.visible ? React.createElement("section", null, props.children) : null }\n'
           }

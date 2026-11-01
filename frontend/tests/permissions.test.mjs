@@ -121,7 +121,9 @@ test('el mapa HTTP coincide con todos los guards reales del backend sin importar
     vm.runInNewContext(await source(`../../backend/src/routes/${files[mount[2]]}.js`), {
       module,
       require(name) {
-        if (name === 'express') return { Router: () => router }
+        if (name === 'express') return { Router: () => router, raw: () => () => {} }
+        if (name.endsWith('/profileController'))
+          return { createProfileController: () => new Proxy({}, { get: () => () => {} }) }
         if (name.endsWith('/permissionMiddleware'))
           return { verificarPermiso: (permission) => ({ permission }) }
         return new Proxy({}, { get: () => () => {} })

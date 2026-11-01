@@ -7,11 +7,24 @@ const moduleUrl = (source) =>
 const load = async (file) =>
   import(moduleUrl(await readFile(new URL(file, import.meta.url), 'utf8')))
 
-test('Dashboard: octubre inicial, validación de período y sucursal y vacíos sin datos inventados', async () => {
-  const { initialDashboardFilters, validateDashboardFilters, buildDashboard, loadDashboard } =
-    await load('../src/views/dashboard/dashboardModel.js')
+test('Dashboard: mes actual de Nicaragua, validación de período y sucursal y vacíos sin datos inventados', async () => {
+  const {
+    currentDashboardPeriod,
+    dashboardPeriodLabel,
+    validateDashboardFilters,
+    buildDashboard,
+    loadDashboard,
+  } = await load('../src/views/dashboard/dashboardModel.js')
+  const initialDashboardFilters = currentDashboardPeriod(new Date('2026-10-31T18:00:00Z'))
   assert.equal(initialDashboardFilters.desde, '2026-10-01')
   assert.equal(initialDashboardFilters.hasta, '2026-10-31')
+  assert.equal(initialDashboardFilters.id_sucursal, '')
+  assert.equal(currentDashboardPeriod(new Date('2026-11-01T05:59:59Z')).desde, '2026-10-01')
+  assert.equal(currentDashboardPeriod(new Date('2026-11-01T06:00:00Z')).desde, '2026-11-01')
+  assert.equal(currentDashboardPeriod(new Date('2028-02-15T12:00:00Z')).hasta, '2028-02-29')
+  assert.equal(currentDashboardPeriod(new Date('2026-12-31T18:00:00Z')).hasta, '2026-12-31')
+  assert.match(dashboardPeriodLabel(initialDashboardFilters), /octubre de 2026/)
+  assert.match(dashboardPeriodLabel(initialDashboardFilters), /Todas las sucursales autorizadas/)
   for (const invalid of [
     { desde: '2026-02-30' },
     { hasta: '2026-01-01' },

@@ -1,5 +1,7 @@
 import CModal from '../../components/management/AppModal'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import CIcon from '@coreui/icons-react'
+import { cilCart } from '@coreui/icons'
 import {
   CAlert,
   CBadge,
@@ -49,6 +51,7 @@ const Sales = () => {
   const [branch, setBranch] = useState('')
   const [type, setType] = useState('')
   const [mode, setMode] = useState('')
+  const [posMaximized, setPosMaximized] = useState(false)
   const [catalog, setCatalog] = useState(null)
   const [sale, setSale] = useState(null)
   const [invoice, setInvoice] = useState(null)
@@ -417,6 +420,7 @@ const Sales = () => {
         )}
         <CModal
           visible={!!mode}
+          className={mode === 'new' && posMaximized ? 'sale-pos-maximized' : ''}
           size="xl"
           backdrop="static"
           keyboard={!busy}
@@ -424,9 +428,22 @@ const Sales = () => {
             if (!busy) setMode('')
           }}
         >
-          <CModalHeader closeButton={!busy}>
+          <CModalHeader
+            closeButton={!busy}
+            className={mode === 'new' ? 'sale-pos-header' : undefined}
+          >
             <CModalTitle>
-              {
+              {mode === 'new' ? (
+                <>
+                  <span className="pos-header-icon">
+                    <CIcon icon={cilCart} size="xl" />
+                  </span>
+                  <span className="pos-header-copy">
+                    <span>Nueva venta</span>
+                    <small>Selecciona productos y prepara tu venta en un solo lugar</small>
+                  </span>
+                </>
+              ) : (
                 {
                   new: 'Nueva venta',
                   detail: 'Detalle de venta',
@@ -434,8 +451,34 @@ const Sales = () => {
                   cancel: 'Anular venta',
                   invoice: 'Factura',
                 }[mode]
-              }
+              )}
             </CModalTitle>
+            {mode === 'new' && (
+              <CButton
+                type="button"
+                className="pos-window-toggle"
+                aria-label={posMaximized ? 'Restaurar ventana' : 'Maximizar ventana'}
+                aria-pressed={posMaximized}
+                title={posMaximized ? 'Restaurar ventana' : 'Maximizar ventana'}
+                onClick={() => setPosMaximized((value) => !value)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  {posMaximized ? (
+                    <path d="M8 8V4h12v12h-4M4 8h12v12H4z" stroke="currentColor" strokeWidth="2" />
+                  ) : (
+                    <rect
+                      x="4"
+                      y="4"
+                      width="16"
+                      height="16"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  )}
+                </svg>
+              </CButton>
+            )}
           </CModalHeader>
           <CModalBody>
             {modalError && mode !== 'new' && <CAlert color="danger">{modalError}</CAlert>}

@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { validateProduct } from './productModel'
+import ProductPhoto from './ProductPhoto'
 import {
   CAlert,
   CButton,
@@ -17,7 +18,18 @@ import {
   CSpinner,
 } from '@coreui/react'
 
-const ProductForm = ({ product, categories, brands, saving, error, onSave, onCancel }) => {
+const ProductForm = ({
+  product,
+  categories,
+  brands,
+  saving,
+  error,
+  onSave,
+  onCancel,
+  canEditPhoto = false,
+  photoOnly = false,
+}) => {
+  const [photoChange, setPhotoChange] = useState(null)
   const [values, setValues] = useState(() => ({
     id_categoria: product?.id_categoria ?? '',
     id_marca: product?.id_marca ?? '',
@@ -48,13 +60,13 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
   const handleSubmit = (event) => {
     event.preventDefault()
     if (saving) return
-    const message = validateProduct(values, categories, brands)
+    const message = photoOnly ? '' : validateProduct(values, categories, brands)
     if (message) {
       setValidationError(message)
       return
     }
     setValidationError('')
-    onSave(values)
+    onSave(values, photoChange)
   }
 
   return (
@@ -81,7 +93,7 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
             editar; selecciona una categoría activa y una marca activa o sin marca.
           </CAlert>
         )}
-        <fieldset disabled={saving} className="border-0 p-0 m-0">
+        <fieldset disabled={saving || photoOnly} className="border-0 p-0 m-0">
           <CRow className="g-3">
             <CCol md={4}>
               <CFormLabel htmlFor="product-sku">SKU *</CFormLabel>
@@ -223,6 +235,13 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
             </CCol>
           </CRow>
         </fieldset>
+        <ProductPhoto
+          productId={product?.id_producto}
+          change={photoChange}
+          onChange={setPhotoChange}
+          disabled={saving}
+          canEdit={canEditPhoto}
+        />
         <p className="small text-body-secondary mt-3" role="status">
           {values.tipo_control === 'SERIALIZADO'
             ? 'Serializado: los IMEI y unidades se registran en Compras e Inventario.'
@@ -251,9 +270,13 @@ const ProductForm = ({ product, categories, brands, saving, error, onSave, onCan
         >
           Cancelar
         </CButton>
-        <CButton type="submit" color="primary" disabled={saving || !activeCategories.length}>
+        <CButton
+          type="submit"
+          color="primary"
+          disabled={saving || (!photoOnly && !activeCategories.length)}
+        >
           {saving && <CSpinner size="sm" className="me-2" aria-hidden="true" />}
-          {saving ? 'Guardando...' : 'Guardar producto'}
+          {saving ? 'Guardando...' : photoOnly ? 'Reintentar fotografía' : 'Guardar producto'}
         </CButton>
       </CModalFooter>
     </CForm>
@@ -268,6 +291,8 @@ ProductForm.propTypes = {
   error: PropTypes.string.isRequired,
   onSave: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
+  canEditPhoto: PropTypes.bool,
+  photoOnly: PropTypes.bool,
 }
 
 export default ProductForm

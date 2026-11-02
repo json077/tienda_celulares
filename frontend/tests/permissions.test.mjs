@@ -124,6 +124,8 @@ test('el mapa HTTP coincide con todos los guards reales del backend sin importar
         if (name === 'express') return { Router: () => router, raw: () => () => {} }
         if (name.endsWith('/profileController'))
           return { createProfileController: () => new Proxy({}, { get: () => () => {} }) }
+        if (name.endsWith('/productPhotoController'))
+          return { createProductPhotoController: () => new Proxy({}, { get: () => () => {} }) }
         if (name.endsWith('/permissionMiddleware'))
           return { verificarPermiso: (permission) => ({ permission }) }
         return new Proxy({}, { get: () => () => {} })

@@ -302,6 +302,8 @@
     box-shadow: 0 0 0 1px var(--pos-blue);
   }
   .pos-product-image {
+    position: relative;
+    overflow: hidden;
     display: grid;
     place-items: center;
     color: #8297b5;
@@ -311,6 +313,14 @@
   .pos-product-image svg {
     width: 42px;
     height: 42px;
+  }
+  .pos-product-image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
   }
   .pos-product-card > .pos-product-image {
     min-height: 104px;
@@ -357,10 +367,28 @@
     font-size: 0.75rem;
     border-radius: 7px;
   }
-  .sale-pos .btn-primary {
+  .sale-pos .btn.btn-primary {
     --cui-btn-bg: #2563eb;
     --cui-btn-border-color: #2563eb;
     --cui-btn-color: #fff;
+    --cui-btn-disabled-bg: #2563eb;
+    --cui-btn-disabled-border-color: #2563eb;
+    --cui-btn-disabled-color: #fff;
+  }
+  .sale-pos .btn.btn-primary,
+  .sale-pos .btn.btn-outline-primary {
+    --cui-btn-hover-bg: #1d4ed8;
+    --cui-btn-hover-border-color: #1d4ed8;
+    --cui-btn-hover-color: #fff;
+    --cui-btn-active-bg: #1e40af;
+    --cui-btn-active-border-color: #1e40af;
+    --cui-btn-active-color: #fff;
+  }
+  [data-coreui-theme='dark'] .sale-pos .btn.btn-outline-primary {
+    --cui-btn-color: #93c5fd;
+    --cui-btn-border-color: #93c5fd;
+    --cui-btn-disabled-color: #93c5fd;
+    --cui-btn-disabled-border-color: #93c5fd;
   }
   .pos-cart {
     display: grid;
@@ -520,6 +548,29 @@
   }
   .pos-imei {
     margin-top: 0.65rem;
+  }
+  [data-coreui-theme='dark'] .sale-pos .pos-imei .form-select[multiple] {
+    color-scheme: dark;
+    color: var(--pos-text);
+    background-color: var(--pos-surface);
+    border-color: var(--pos-border);
+  }
+  [data-coreui-theme='dark'] .sale-pos .pos-imei .form-select[multiple] option {
+    color: var(--pos-text);
+    background-color: var(--pos-surface);
+  }
+  [data-coreui-theme='dark'] .sale-pos .pos-imei .form-select[multiple] option:checked {
+    color: #fff;
+    /* Keep the selected row legible even when Chrome's native list loses focus. */
+    background: linear-gradient(#2563eb, #2563eb);
+  }
+  [data-coreui-theme='dark'] .sale-pos .pos-imei .form-select[multiple]:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 0.2rem rgb(147 197 253 / 20%);
+  }
+  [data-coreui-theme='dark'] .sale-pos .pos-imei .form-select[multiple]:disabled {
+    color: var(--pos-muted);
+    background-color: var(--pos-bg);
   }
   .pos-line-options,
   .pos-note {

@@ -172,7 +172,29 @@ async function desactivar(idProducto) {
   return result.affectedRows;
 }
 
+async function obtenerFoto(idProducto) {
+  const [rows] = await pool.query('SELECT id_producto, imagen_ruta FROM productos WHERE id_producto = ?', [idProducto]);
+  return rows[0] || null;
+}
+
+async function cambiarFoto(idProducto, reference) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query('SELECT imagen_ruta FROM productos WHERE id_producto = ? FOR UPDATE', [idProducto]);
+    if (!rows.length) throw Object.assign(new Error('Producto no encontrado.'), { status: 404 });
+    await connection.query('UPDATE productos SET imagen_ruta = ? WHERE id_producto = ?', [reference, idProducto]);
+    await connection.commit();
+    return rows[0].imagen_ruta;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally { connection.release(); }
+}
+
 module.exports = {
+  obtenerFoto,
+  cambiarFoto,
   obtenerTodos,
   obtenerPorId,
   obtenerPorSku,

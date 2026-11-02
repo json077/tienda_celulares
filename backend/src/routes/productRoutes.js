@@ -12,8 +12,21 @@ const {
 } = require('../validators/productValidator');
 
 const router = express.Router();
+const { MAX_BYTES, createProductPhotoService } = require('../services/productPhoto');
+const { createProductPhotoController } = require('../controllers/productPhotoController');
+const photos = createProductPhotoController(createProductPhotoService(require('../repositories/productRepository')));
 
 router.use(verificarToken);
+
+router.get('/:id/foto', verificarPermiso('PRODUCTO_VER'), validarIdProducto, manejarErroresValidacion, photos.get);
+router.put('/:id/foto', verificarPermiso('PRODUCTOS_EDITAR'), validarIdProducto, manejarErroresValidacion,
+  express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: MAX_BYTES }), photos.put);
+router.delete('/:id/foto', verificarPermiso('PRODUCTOS_EDITAR'), validarIdProducto, manejarErroresValidacion, photos.remove);
+router.use((error, req, res, next) => {
+  if (!/^\/[^/]+\/foto\/?$/.test(req.path)) return next(error);
+  return res.status(error.type === 'entity.too.large' ? 413 : 400)
+    .json({ ok: false, message: error.type === 'entity.too.large' ? 'La fotografía supera el máximo de 2 MB.' : 'Solicitud de fotografía inválida.' });
+});
 
 router.get(
   '/',

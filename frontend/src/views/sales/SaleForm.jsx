@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react'
+import React, { useEffect, useId, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   CAlert,
@@ -13,6 +13,9 @@ import {
 import SaleSummary from './SaleSummary'
 import { clearSaleSelections } from './saleAvailability'
 import { useSaleUnits } from './useSaleUnits'
+import { productPhotoService } from '../../services/productPhotoService'
+import { createSalePhotoCache } from './salePhotoCache'
+import SaleProductImage, { ProductPlaceholder } from './SaleProductImage'
 import {
   availableUnits,
   money,
@@ -24,14 +27,6 @@ import {
 } from './saleModel'
 
 const noUnits = async () => []
-const ProductPlaceholder = () => (
-  <span className="pos-product-image" aria-hidden="true">
-    <svg viewBox="0 0 48 48" fill="none">
-      <rect x="13" y="5" width="22" height="38" rx="5" stroke="currentColor" strokeWidth="2" />
-      <path d="M20 10h8M22 37h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  </span>
-)
 const SaleForm = ({
   catalog,
   saving,
@@ -75,6 +70,8 @@ const SaleForm = ({
   const availability = useSaleUnits(scope, canReadUnits, loadUnits)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [photoCache] = useState(() => createSalePhotoCache(productPhotoService.get))
+  useEffect(() => () => photoCache.dispose(), [photoCache])
   const units = availability.rows
   const unitsBusy = serialProducts.length > 0 && availability.loading
   const unitError =
@@ -355,7 +352,7 @@ const SaleForm = ({
                         className={`pos-product-card ${productId === String(p.id_producto) ? 'is-selected' : ''}`}
                         key={p.id_producto}
                       >
-                        <ProductPlaceholder />
+                        <SaleProductImage productId={p.id_producto} cache={photoCache} />
                         <span className="pos-product-category">
                           {p.categoria || p.tipo_control}
                         </span>
@@ -488,7 +485,7 @@ const SaleForm = ({
                   {values.detalles.map((l, i) => (
                     <article className="pos-cart-item" key={l.id_producto}>
                       <div className="pos-item-heading">
-                        <ProductPlaceholder />
+                        <SaleProductImage productId={l.id_producto} cache={photoCache} />
                         <div>
                           <h3>{l.producto}</h3>
                           <span className="pos-sku">

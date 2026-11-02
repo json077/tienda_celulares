@@ -25,6 +25,8 @@ import {
 } from '@coreui/react'
 import { productErrorMessage, productService } from '../../services/productService'
 import ProductForm from './ProductForm'
+import { productPhotoService } from '../../services/productPhotoService'
+import { saveProductWithPhoto } from './saveProductPhoto'
 import { useAuth } from '../../contexts/AuthContext'
 import { filterProducts } from './productModel'
 
@@ -101,16 +103,25 @@ const Products = () => {
     }
   }
 
-  const saveProduct = async (values) => {
+  const saveProduct = async (values, photoChange) => {
     if (!can(editor.product ? 'PRODUCTOS_EDITAR' : 'PRODUCTOS_CREAR')) return
     if (pending.current) return
     pending.current = true
     setOperation('saving')
     setFormError('')
     try {
-      const response = editor.product
-        ? await productService.update(editor.product.id_producto, values)
-        : await productService.create(values)
+      const response = await saveProductWithPhoto({
+        products: productService,
+        photos: productPhotoService,
+        product: editor.product,
+        values,
+        change: photoChange,
+        photoOnly: editor.photoOnly,
+        onPersisted: (product) => {
+          // Only photo workflows need to retain an editor after product persistence.
+          if (photoChange) setEditor((current) => ({ ...current, product, photoOnly: true }))
+        },
+      })
       setEditor(null)
       setSuccess(response.message)
       await refreshProducts()
@@ -417,6 +428,8 @@ const Products = () => {
             error={formError}
             onSave={saveProduct}
             onCancel={() => setEditor(null)}
+            canEditPhoto={can('PRODUCTOS_EDITAR') && can('PRODUCTO_VER')}
+            photoOnly={!!editor.photoOnly}
           />
         )}
       </CModal>

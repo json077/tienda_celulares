@@ -15,6 +15,7 @@ backend/private/
 *.sql
 !database/*.sql
 !database/migrations/02_imei_ver.sql
+!database/migrations/03_product_photos.sql
 
 # Respaldo descargado durante pruebas
 respaldo_descargado_prueba.sql

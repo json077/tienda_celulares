@@ -49,6 +49,11 @@ test('VENDEDOR consulta catalogos canonicos y crea ventas sin obtener permisos d
     });
     const router = load(`routes/${name}Routes.js`, {
       express,
+      ...(name === 'product' ? {
+        '../services/productPhoto': { MAX_BYTES: 2 * 1024 * 1024, createProductPhotoService: () => ({}) },
+        '../controllers/productPhotoController': { createProductPhotoController: () => ({ get: controller.foto, put: controller.foto, remove: controller.foto }) },
+        '../repositories/productRepository': {},
+      } : {}),
       [`../controllers/${name}Controller`]: controller,
       '../middlewares/authMiddleware': { verificarToken: (...args) => Promise.resolve(auth.verificarToken(...args)) },
       '../middlewares/permissionMiddleware': permission,

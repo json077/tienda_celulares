@@ -48,6 +48,9 @@ test('renderizado Productos y formulario CoreUI: carga, filtros, controles, erro
       assert.match(html, /No hay categorías activas/)
       assert.match(html, /fieldset disabled/)
       assert.match(html, /Guardando/)
+      assert.match(html, /Fotografía del producto/)
+      assert.match(html, /Sin fotografía/)
+      assert.match(html, /accept="image\/jpeg,image\/png,image\/webp"/)
       assert.match(html, tipo_control === 'SERIALIZADO' ? /IMEI y unidades/ : /las existencias/)
       assert.doesNotMatch(html, /name="(stock|imei|costo)"/)
     }

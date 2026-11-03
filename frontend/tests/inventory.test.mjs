@@ -268,7 +268,7 @@ test('servicio: rutas reales, JWT, señales y respuestas actualizadas; errores H
   globalThis.localStorage = { getItem: () => 'INVENTORY_TEST_TOKEN' }
   globalThis.fetch = async (url, options) => {
     calls.push({ url, options })
-    const path = url.replace('http://localhost:3000/api', '')
+    const path = url.replace('/api', '')
     const data =
       path === '/inventario'
         ? snapshots.stock
@@ -292,7 +292,7 @@ test('servicio: rutas reales, JWT, señales y respuestas actualizadas; errores H
     })
     await service.inventoryService.setMinimum(stock[0], '3')
     assert.deepEqual(
-      calls.map((c) => c.url.replace('http://localhost:3000/api', '')),
+      calls.map((c) => c.url.replace('/api', '')),
       [
         '/inventario',
         '/unidades',

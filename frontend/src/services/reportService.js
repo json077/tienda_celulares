@@ -1,4 +1,4 @@
-import { api, authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
+import { api, API_URL, authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
 
 export const reportQuery = (filters) => {
   const params = new URLSearchParams()
@@ -19,7 +19,7 @@ export const reportService = {
     const token = localStorage.getItem(TOKEN_KEY)
     const path = `/reportes/${type}/excel${reportQuery(filters)}`
     authorizeRequest(path, 'GET', token)
-    const response = await fetch(`http://localhost:3000/api${path}`, {
+    const response = await fetch(`${API_URL}${path}`, {
       headers: { Authorization: `Bearer ${token}` },
       signal,
     })

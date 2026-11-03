@@ -1,0 +1,29 @@
+# Deny by default: never send local data or credentials to the build daemon.
+**
+!backend/
+!backend/package.json
+!backend/package-lock.json
+!backend/src/
+!backend/src/**
+!backend/docker/
+!backend/docker/healthcheck.js
+!backend/Dockerfile
+!frontend/
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.mjs
+!frontend/src/
+!frontend/src/**
+!frontend/public/
+!frontend/public/**
+!frontend/nginx.conf
+!frontend/Dockerfile
+# Defense in depth for files placed inside source/public directories later.
+**/.env
+**/.env.*
+**/*.sql
+**/*.pem
+**/*.key
+**/private/**
+**/node_modules/**

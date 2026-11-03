@@ -206,7 +206,7 @@ test('servicios con fetch simulado: abrir → pagar → consultar pago → cerra
   let currentSession = null
   globalThis.localStorage = { getItem: () => 'TEST_TOKEN' }
   globalThis.fetch = async (url, options) => {
-    const path = url.replace('http://localhost:3000/api', '')
+    const path = url.replace('/api', '')
     const body = options.body ? JSON.parse(options.body) : null
     calls.push({ path, options, body })
     let data

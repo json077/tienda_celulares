@@ -253,9 +253,7 @@ test('servicio: GET/listado/detalle y POST cuota con JWT y errores reales; ningu
     )
     assert.deepEqual(
       calls.map((c) => c.path),
-      ['/creditos', '/creditos/3', '/creditos/cuotas/9/pagar'].map(
-        (p) => 'http://localhost:3000/api' + p,
-      ),
+      ['/creditos', '/creditos/3', '/creditos/cuotas/9/pagar'].map((p) => '/api' + p),
     )
     assert.equal(calls[0].signal, controller.signal)
     assert.ok(calls.every((c) => c.headers.Authorization === 'Bearer jwt-prueba'))

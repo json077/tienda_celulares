@@ -137,7 +137,7 @@ const withMock = async (handler, run) => {
   globalThis.localStorage = { getItem: () => 'jwt-mock' }
   globalThis.fetch = async (path, options) => {
     calls.push({ path, ...options })
-    return handler(path.replace('http://localhost:3000/api', ''), options)
+    return handler(path.replace('/api', ''), options)
   }
   try {
     await run(calls)

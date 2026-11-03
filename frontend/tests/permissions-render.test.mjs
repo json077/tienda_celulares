@@ -111,6 +111,9 @@ test('autorización visual y handlers con sesiones simuladas, sin navegador ni A
     root: fileURLToPath(new URL('..', import.meta.url)),
     configFile: false,
     optimizeDeps: { noDiscovery: true, include: [] },
+    // Use the package's ESM entry, as the browser build does. Node's CJS
+    // default export is a namespace object, not the CIcon React component.
+    ssr: { noExternal: ['@coreui/icons-react'] },
     server: { middlewareMode: true, watch: null, hmr: false },
     appType: 'custom',
     plugins: [
@@ -272,7 +275,7 @@ test('autorización visual y handlers con sesiones simuladas, sin navegador ni A
         globalThis.localStorage = { getItem: () => 'sesion-simulada' }
         globalThis.fetch = async (url, options) => {
           assert.equal(options.method, 'GET', 'Abrir el formulario solo consulta')
-          const path = new URL(url).pathname
+          const path = new URL(url, 'http://test.invalid').pathname
           assert.ok(['/api/productos', '/api/clientes', '/api/inventario'].includes(path), path)
           calls.push(path)
           return { ok: true, status: 200, json: async () => ({ ok: true, data: [] }) }
@@ -394,7 +397,7 @@ test('autorización visual y handlers con sesiones simuladas, sin navegador ni A
           'sales/Sales',
           'VENTA_VER',
           [
-            [12, record],
+            [13, record], // Sales: catalog is state 12; sale is state 13.
             [10, 'detail'],
           ],
           ['Revisar y confirmar'],
@@ -403,7 +406,7 @@ test('autorización visual y handlers con sesiones simuladas, sin navegador ni A
           'sales/Sales',
           'VENTA_VER',
           [
-            [12, { ...record, estado: 'CONFIRMADA' }],
+            [13, { ...record, estado: 'CONFIRMADA' }],
             [10, 'detail'],
           ],
           ['Ver / imprimir factura', 'Anular venta'],

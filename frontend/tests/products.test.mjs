@@ -103,7 +103,7 @@ test('contrato HTTP con mocks: listar, detalle, crear, editar, desactivar y reac
       ['GET', 'GET', 'GET', 'GET', 'POST', 'PUT', 'DELETE', 'PUT'],
     )
     assert.ok(calls.every((c) => c.headers.Authorization === 'Bearer test-token'))
-    assert.equal(calls[6].path, 'http://localhost:3000/api/productos/2')
+    assert.equal(calls[6].path, '/api/productos/2')
     const created = JSON.parse(calls[4].body)
     assert.equal(created.sku, 'CAB')
     assert.equal(created.id_marca, null)

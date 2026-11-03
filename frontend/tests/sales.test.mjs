@@ -125,7 +125,7 @@ test('servicios: rutas reales, JWT, confirmar con IDs de detalle y errores HTTP'
     await service.saleService.invoice(5)
     await service.saleService.payments(5)
     assert.deepEqual(
-      calls.map((c) => c.url.replace('http://localhost:3000/api', '')),
+      calls.map((c) => c.url.replace('/api', '')),
       [
         '/ventas',
         '/ventas/5',

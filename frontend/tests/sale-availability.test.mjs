@@ -37,7 +37,7 @@ test('IMEI_VER consulta solo disponibilidad parametrizada, sin gestionar ni regi
   })
   globalThis.localStorage = { getItem: () => 'simulado' }
   globalThis.fetch = async (path, options) => {
-    calls.push({ path: new URL(path), options })
+    calls.push({ path: new URL(path, 'http://test.invalid'), options })
     return { ok: true, status: 200, json: async () => ({ ok: true, data: [unit()] }) }
   }
   try {

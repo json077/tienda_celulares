@@ -62,9 +62,9 @@ function fixture(t, override = () => undefined) {
     },
   }
   globalThis.fetch = async (url, options) => {
-    assert.ok(url.startsWith('http://localhost:3000/api/'))
+    assert.ok(url.startsWith('/api/'))
     assert.equal(options.headers.Authorization, 'Bearer token-simulado')
-    const path = new URL(url).pathname.replace('/api', '')
+    const path = new URL(url, 'http://test.invalid').pathname.replace('/api', '')
     const call = { path, url, options, body: options.body ? JSON.parse(options.body) : null }
     calls.push(call)
     const response = await override(call)
@@ -109,7 +109,7 @@ test('listado: filtros exactos, paginación del servidor y roles desde detalles 
     pagina: 2,
     limite: 10,
   })
-  const params = new URL(calls[0].url).searchParams
+  const params = new URL(calls[0].url, 'http://test.invalid').searchParams
   assert.equal(params.get('buscar'), 'Ana & Luis')
   assert.equal(params.get('activo'), '0')
   assert.equal(params.get('id_rol'), '2')

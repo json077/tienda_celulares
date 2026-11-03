@@ -1,0 +1,85 @@
+name: tienda-celulares-docker
+
+services:
+  mysql:
+    image: mysql:8.4.13
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: tienda_contenedores
+      MYSQL_USER: tienda_app
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Configura MYSQL_PASSWORD en el .env de Compose}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en el .env de Compose}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/init/02_catalogs.sql:/docker-entrypoint-initdb.d/02_catalogs.sql:ro
+    networks: [internal]
+    healthcheck:
+      # TCP is unavailable during the image's temporary initialization server.
+      test:
+        - CMD-SHELL
+        - >-
+          result=$$(MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1
+          -u "$$MYSQL_USER" --database="$$MYSQL_DATABASE" --batch --skip-column-names
+          -e 'SELECT (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type="BASE TABLE"), (SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE());')
+          && [ "$$(echo "$$result" | tr '\t' ':')" = '41:74' ]
+      interval: 15s
+      timeout: 10s
+      start_period: 120s
+      retries: 10
+    stop_grace_period: 60s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: tienda_contenedores
+      DB_USER: tienda_app
+      DB_PASSWORD: ${MYSQL_PASSWORD:?Configura MYSQL_PASSWORD en el .env de Compose}
+      JWT_SECRET: ${JWT_SECRET:?Configura JWT_SECRET en el .env de Compose}
+      PRODUCT_PHOTO_DIR: /data/product-photos
+      PROFILE_PHOTO_DIR: /app/backend/private/profile-photos
+      MYSQL_PATH: /usr/bin/mysql
+      MYSQLDUMP_PATH: /usr/bin/mysqldump
+    volumes:
+      - product_photos:/data/product-photos
+      - profile_photos:/app/backend/private/profile-photos
+      - sql_backups:/app/backend/private/respaldos
+    networks: [internal]
+    depends_on:
+      mysql:
+        condition: service_healthy
+        restart: true
+    stop_grace_period: 60s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
+    networks: [web, internal]
+    depends_on:
+      backend:
+        condition: service_healthy
+        restart: true
+
+networks:
+  web:
+  internal:
+    internal: true
+
+volumes:
+  mysql_data:
+  product_photos:
+  profile_photos:
+  sql_backups:

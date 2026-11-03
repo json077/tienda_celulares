@@ -196,7 +196,7 @@ test('proveedores: rutas reales/JWT/señales y respuesta intacta para Compras; D
         '/proveedores/5',
         '/proveedores/5',
         '/proveedores/5',
-      ].map((p) => 'http://localhost:3000/api' + p),
+      ].map((p) => '/api' + p),
     )
     assert.deepEqual(JSON.parse(calls[2].body), supplierPayload(draft()))
     assert.equal(JSON.parse(calls[3].body).activo, false)

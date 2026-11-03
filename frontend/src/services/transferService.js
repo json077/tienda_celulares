@@ -1,4 +1,4 @@
-import { authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
+import { API_URL, authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
 
 export const transferPayload = (values) => ({
   numero_transferencia: values.numero_transferencia.trim(),
@@ -20,7 +20,7 @@ const request = async (path = '', method = 'GET', body, signal) => {
   const permission = authorizeRequest(`/transferencias${path}`, method, token)
   let response
   try {
-    response = await fetch(`http://localhost:3000/api/transferencias${path}`, {
+    response = await fetch(`${API_URL}/transferencias${path}`, {
       method,
       signal,
       headers: {

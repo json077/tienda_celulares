@@ -228,10 +228,10 @@ test('servicio: endpoints reales, token, señales, payload exacto, errores y nin
     const { purchaseService } = await import(moduleUrl(serviceSource))
     const signal = new AbortController().signal
     await purchaseService.list(signal)
-    assert.equal(calls.at(-1).url, 'http://localhost:3000/api/compras')
+    assert.equal(calls.at(-1).url, '/api/compras')
     assert.equal(calls.at(-1).signal, signal)
     await purchaseService.get(9, signal)
-    assert.equal(calls.at(-1).url, 'http://localhost:3000/api/compras/9')
+    assert.equal(calls.at(-1).url, '/api/compras/9')
     await purchaseService.create({
       ...draft(),
       estado: 'CONFIRMADA',
@@ -248,14 +248,14 @@ test('servicio: endpoints reales, token, señales, payload exacto, errores y nin
       ],
     })
     await purchaseService.confirm(9, units())
-    assert.equal(calls.at(-1).url, 'http://localhost:3000/api/compras/9/confirmar')
+    assert.equal(calls.at(-1).url, '/api/compras/9/confirmar')
     assert.equal(calls.at(-1).body.unidades[1].imei2, null)
     assert.equal(calls.at(-1).body.unidades[1].numero_serie, null)
     assert.equal(calls.at(-1).body.unidades[0].imei1, '000000000000001')
     await purchaseService.confirm(9, [])
     assert.deepEqual(calls.at(-1).body, { unidades: [] })
     await purchaseService.cancel(9)
-    assert.equal(calls.at(-1).url, 'http://localhost:3000/api/compras/9/anular')
+    assert.equal(calls.at(-1).url, '/api/compras/9/anular')
     assert.deepEqual(calls.at(-1).body, {})
     assert.deepEqual(
       calls.map((call) => call.method),

@@ -90,10 +90,7 @@ test('Perfil HTTP: rutas propias sin IDs, foto binaria con Bearer, límites, err
     )
     await profileService.remove(controller.signal)
     assert.ok(
-      calls.every(
-        ({ path }) =>
-          path.startsWith('http://localhost:3000/api/auth/profile') && !path.includes('999'),
-      ),
+      calls.every(({ path }) => path.startsWith('/api/auth/profile') && !path.includes('999')),
     )
     assert.ok(calls.every(({ options }) => options.headers.Authorization === 'Bearer own-token'))
     assert.equal(calls[2].options.body, blob)

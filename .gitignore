@@ -13,12 +13,19 @@ frontend/.env
 # Respaldos privados de MySQL
 backend/private/
 *.sql
-!database/*.sql
+!database/01_schema_tienda_celulares.sql
+!database/init/01_schema.sql
+!database/init/02_catalogs.sql
 !database/migrations/02_imei_ver.sql
 !database/migrations/03_product_photos.sql
 
 # Respaldo descargado durante pruebas
 respaldo_descargado_prueba.sql
+
+# Copias comprimidas de datos privados
+*.sql.gz
+*.sql.zip
+private-assets*.tar.gz
 
 # Logs
 *.log

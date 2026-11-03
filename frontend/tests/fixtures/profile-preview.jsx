@@ -30,7 +30,7 @@ api.get = async (path) => {
   }
 }
 window.fetch = async (url, options = {}) => {
-  if (url !== 'http://localhost:3000/api/auth/profile/photo') throw new Error('API real bloqueada')
+  if (url !== '/api/auth/profile/photo') throw new Error('API real bloqueada')
   if (options.headers.Authorization !== 'Bearer isolated-profile-test')
     throw new Error('Identidad de prueba ausente')
   if (options.method === 'PUT') {

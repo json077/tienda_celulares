@@ -188,8 +188,8 @@ test('contrato HTTP: listado/detalle/crear/editar/desactivar/reactivar con JWT y
       ['GET', 'GET', 'POST', 'PUT', 'DELETE', 'PUT'],
     )
     assert.ok(calls.every((c) => c.headers.Authorization === 'Bearer jwt-prueba'))
-    assert.ok(calls.every((c) => c.path.startsWith('http://localhost:3000/api/clientes')))
-    assert.equal(calls[4].path, 'http://localhost:3000/api/clientes/7')
+    assert.ok(calls.every((c) => c.path.startsWith('/api/clientes')))
+    assert.equal(calls[4].path, '/api/clientes/7')
     assert.equal(calls[4].body, undefined)
     assert.deepEqual(JSON.parse(calls[2].body), customerPayload(draft()))
     assert.equal(JSON.parse(calls[3].body).activo, false)

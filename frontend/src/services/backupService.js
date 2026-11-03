@@ -1,4 +1,4 @@
-import { api, authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
+import { api, API_URL, authorizeRequest, reportAccessDenied, TOKEN_KEY } from './api'
 
 export function backupId(value) {
   const id = String(value)
@@ -15,7 +15,7 @@ export const backupService = {
     const path = `/respaldos/${backupId(id)}/descargar`
     const token = localStorage.getItem(TOKEN_KEY)
     authorizeRequest(path, 'GET', token)
-    const response = await fetch(`http://localhost:3000/api${path}`, {
+    const response = await fetch(`${API_URL}${path}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (!response.ok) {

@@ -27,7 +27,38 @@ async function products(actor) {
 }
 
 const date = field => `DATE_FORMAT(${field}, '%Y-%m-%d %H:%i:%s') AS fecha`;
+// A document date is editable; only the per-unit purchase entry verifies physical receipt.
+// Multiple purchase entries or an earlier unit movement make the origin ambiguous.
+const origin = `CASE WHEN c.estado='CONFIRMADA' AND dc.id_producto=u.id_producto
+  AND m.entradas=1 AND m.cantidad=1 AND m.tipo_referencia='COMPRA' AND m.id_referencia=c.id_compra
+  AND m.id_producto=u.id_producto AND m.id_sucursal=c.id_sucursal
+  AND m.fecha=(SELECT MIN(first_m.fecha) FROM movimientos_inventario first_m WHERE first_m.id_unidad=u.id_unidad)
+  AND m.fecha<=NOW() THEN m.fecha END`;
+const age = `DATEDIFF(CURRENT_DATE(), ${origin})`;
+const ageClass = `CASE WHEN ${age} IS NULL THEN 'No determinada' WHEN ${age}<=30 THEN 'Reciente' WHEN ${age}<=60 THEN 'Seguimiento' WHEN ${age}<=90 THEN 'Inventario lento' ELSE 'Revisar' END`;
 const queries = {
+  antiguedad_imei: {
+    select: `p.nombre AS producto, p.sku, CONCAT_WS(' / ', NULLIF(u.imei1,''), NULLIF(u.imei2,''), NULLIF(u.numero_serie,'')) AS identificador,
+      s.nombre AS sucursal, COALESCE(DATE_FORMAT(${origin}, '%Y-%m-%d %H:%i:%s'), 'No determinada') AS fecha_ingreso,
+      ${age} AS dias, ${ageClass} AS clasificacion,
+      COALESCE(c.numero_documento, 'No determinada') AS procedencia`,
+    from: `unidades_producto u INNER JOIN productos p ON p.id_producto=u.id_producto
+      INNER JOIN sucursales s ON s.id_sucursal=u.id_sucursal_actual
+      LEFT JOIN detalle_compras dc ON dc.id_detalle_compra=u.id_detalle_compra
+      LEFT JOIN compras c ON c.id_compra=dc.id_compra AND dc.id_producto=u.id_producto
+      LEFT JOIN (SELECT id_unidad, COUNT(*) AS entradas, MIN(fecha) AS fecha, MIN(cantidad) AS cantidad,
+        MIN(tipo_referencia) AS tipo_referencia, MIN(id_referencia) AS id_referencia,
+        MIN(id_producto) AS id_producto, MIN(id_sucursal) AS id_sucursal
+        FROM movimientos_inventario WHERE tipo='COMPRA' GROUP BY id_unidad) m ON m.id_unidad=u.id_unidad`,
+    product: 'p.id_producto', extra: "u.estado='DISPONIBLE' AND p.tipo_control='SERIALIZADO' AND p.activo=1 AND s.activo=1",
+    end: 'ORDER BY dias IS NULL, dias DESC, p.nombre, u.id_unidad',
+  },
+  costos_adquisicion: {
+    select: `${date('c.fecha')}, c.numero_documento AS numero, s.nombre AS sucursal, pr.nombre AS proveedor, p.nombre AS producto, p.sku, dc.cantidad, dc.costo_unitario, dc.descuento, dc.impuesto, dc.subtotal`,
+    from: 'detalle_compras dc INNER JOIN compras c ON c.id_compra=dc.id_compra INNER JOIN proveedores pr ON pr.id_proveedor=c.id_proveedor INNER JOIN productos p ON p.id_producto=dc.id_producto INNER JOIN sucursales s ON s.id_sucursal=c.id_sucursal',
+    date: 'c.fecha', product: 'p.id_producto', supplier: 'pr.id_proveedor', extra: "c.estado='CONFIRMADA'",
+    end: 'ORDER BY c.fecha DESC, c.id_compra DESC, dc.id_detalle_compra DESC',
+  },
   ventas: { select: `v.numero_venta AS numero, ${date('v.fecha')}, s.nombre AS sucursal, CONCAT_WS(' ', c.nombres, c.apellidos) AS cliente, v.tipo_venta, v.estado, v.total`, from: 'ventas v INNER JOIN sucursales s ON s.id_sucursal=v.id_sucursal INNER JOIN clientes c ON c.id_cliente=v.id_cliente', date: 'v.fecha', state: 'v.estado' },
   compras: { select: `c.numero_documento AS numero, ${date('c.fecha')}, s.nombre AS sucursal, p.nombre AS proveedor, c.estado, c.total`, from: 'compras c INNER JOIN sucursales s ON s.id_sucursal=c.id_sucursal INNER JOIN proveedores p ON p.id_proveedor=c.id_proveedor', date: 'c.fecha', state: 'c.estado' },
   existencias: { select: 's.nombre AS sucursal, p.sku, p.nombre AS producto, i.stock_actual, i.stock_minimo', from: 'inventario_sucursal i INNER JOIN sucursales s ON s.id_sucursal=i.id_sucursal INNER JOIN productos p ON p.id_producto=i.id_producto', product: 'p.id_producto' },
@@ -50,7 +81,13 @@ function buildQuery(type, filters, actor) {
   if (filters.hasta) add(`${q.date} < DATE_ADD(?, INTERVAL 1 DAY)`, filters.hasta);
   if (filters.estado) add(`${q.state} = ?`, filters.estado);
   if (filters.id_producto) add(`${q.product} = ?`, filters.id_producto);
+  if (filters.id_proveedor && q.supplier) add(`${q.supplier} = ?`, filters.id_proveedor);
   if (filters.metodo) add(`${q.method} = ?`, filters.metodo);
+  if (type === 'antiguedad_imei' && filters.antiguedad) add(`${ageClass} = ?`, filters.antiguedad);
+  if (type === 'antiguedad_imei' && filters.imei) {
+    add("(LOCATE(?, u.imei1)>0 OR LOCATE(?, u.imei2)>0 OR LOCATE(?, u.numero_serie)>0)", filters.imei);
+    params.push(filters.imei, filters.imei);
+  }
   const order = q.end || (q.date ? `ORDER BY ${q.date} DESC` : 'ORDER BY s.nombre, p.nombre');
   return { sql: `SELECT ${q.select} FROM ${q.from} WHERE ${where.join(' AND ')} ${order} LIMIT 10001`, params };
 }
@@ -61,4 +98,14 @@ async function read(type, filters, actor) {
   return rows;
 }
 
-module.exports = { branches, products, read, buildQuery };
+async function costOptions(actor) {
+  const access = scope(actor);
+  const [rows] = await pool.query(`SELECT DISTINCT p.id_producto, p.sku, p.nombre,
+    pr.id_proveedor, pr.nombre AS proveedor
+    FROM ${queries.costos_adquisicion.from}
+    WHERE ${access.sql} AND c.estado='CONFIRMADA'
+    ORDER BY p.nombre, p.sku, pr.nombre`, access.params);
+  return rows;
+}
+
+module.exports = { branches, products, costOptions, read, buildQuery };

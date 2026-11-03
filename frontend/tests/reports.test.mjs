@@ -5,7 +5,7 @@ import { createServer } from 'vite'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
-test('Reportes CoreUI: acceso, ocho contratos, tablas, resúmenes, advertencias y vacíos', async () => {
+test('Reportes CoreUI: acceso, contratos, tablas, resúmenes, advertencias y vacíos', async () => {
   const server = await createServer({
     root: fileURLToPath(new URL('..', import.meta.url)),
     configFile: false,
@@ -53,6 +53,25 @@ test('Reportes CoreUI: acceso, ocho contratos, tablas, resúmenes, advertencias 
       assert.ok(html.includes('Registros'))
       assert.ok(html.includes('2026-10-01'))
       for (const c of d.columns) assert.ok(html.includes(c.label))
+      if (id === 'costos_adquisicion') {
+        assert.match(html, /C\$ 100[.,]00/)
+        assert.match(html, /Fecha de compra/)
+        assert.match(html, /Costo unitario registrado/)
+      }
+      if (id === 'antiguedad_imei') {
+        assert.match(html, /inventory-age-result/)
+        const unknown = renderToStaticMarkup(
+          React.createElement(Result, {
+            data: {
+              ...data,
+              rows: [{ ...row, dias: 'No determinada', clasificacion: 'No determinada' }],
+            },
+          }),
+        )
+        assert.match(unknown, /No determinada/)
+        assert.doesNotMatch(unknown, /NaN/)
+        assert.match(unknown, /inventory-age-label/)
+      }
       const empty = renderToStaticMarkup(
         React.createElement(Result, { data: { ...data, rows: [] } }),
       )
@@ -114,6 +133,12 @@ test('Reportes HTTP frontend: filtros, JWT, XLSX binario y bloqueo local de expo
     permissions.push('REPORTE_EXPORTAR')
     const blob = await reportService.export('ventas', { id_sucursal: 1 })
     assert.equal(blob.size, 4)
+    assert.equal(
+      reportQuery({ id_producto: 3, id_proveedor: 4, desde: '2026-01-01', hasta: '2026-12-31' }),
+      '?id_producto=3&id_proveedor=4&desde=2026-01-01&hasta=2026-12-31',
+    )
+    await reportService.read('costos_adquisicion', { id_producto: 3, id_proveedor: 4 })
+    assert.equal((await reportService.export('costos_adquisicion', { id_proveedor: 4 })).size, 4)
     globalThis.fetch = async () =>
       new Response(JSON.stringify({ message: 'Acceso revocado' }), { status: 403 })
     await assert.rejects(reportService.export('ventas', {}), (e) => e.status === 403)
@@ -172,6 +197,8 @@ test('Reportes interfaz: selector completo, filtros aplicados y handler de expor
       reports: Object.entries(definitions).map(([id, d]) => ({ id, ...d })),
       branches: [{ id_sucursal: 1, nombre: 'Central' }],
       products: [],
+      costProducts: [{ id_producto: 3, sku: 'HIST', nombre: 'Producto histórico' }],
+      suppliers: [{ id_proveedor: 4, nombre: 'Proveedor histórico' }],
     }
     const data = {
       ...definitions.ventas,
@@ -232,6 +259,23 @@ test('Reportes interfaz: selector completo, filtros aplicados y handler de expor
     assert.match(credits, /Deja ambas fechas vacías/)
     assert.deepEqual(harness.values.get(2), {})
     assert.deepEqual(harness.values.get(3), {})
+    harness.selects
+      .find((s) => s.id === 'report-type')
+      .onChange({ target: { value: 'costos_adquisicion' } })
+    const costs = render()
+    assert.match(costs, /report-supplier/)
+    assert.match(costs, /Proveedor histórico/)
+    assert.match(costs, /Producto histórico/)
+    assert.match(costs, /report-desde/)
+    assert.doesNotMatch(costs, /report-state/)
+    harness.selects.find((s) => s.id === 'report-product').onChange({ target: { value: '3' } })
+    harness.selects.find((s) => s.id === 'report-supplier').onChange({ target: { value: '4' } })
+    render()
+    harness.forms[0].onSubmit({ preventDefault() {} })
+    assert.deepEqual(harness.values.get(3), { id_producto: '3', id_proveedor: '4' })
+    harness.selects.find((s) => s.id === 'report-type').onChange({ target: { value: 'ventas' } })
+    assert.doesNotMatch(render(), /report-supplier/)
+    assert.deepEqual(harness.values.get(2), {})
     permissions = []
     assert.match(render(), /No tienes permiso para consultar reportes/)
   } finally {

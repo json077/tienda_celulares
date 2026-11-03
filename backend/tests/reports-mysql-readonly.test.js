@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 
-test('MySQL solo lectura: ocho reportes, filtros, totales y aislamiento real de sucursales', { skip: process.env.REPORTS_MYSQL_READONLY !== '1' }, async t => {
+test('MySQL solo lectura: reportes, filtros, totales y aislamiento real de sucursales', { skip: process.env.REPORTS_MYSQL_READONLY !== '1' }, async t => {
   require('dotenv').config({ path: path.join(__dirname, '../.env'), quiet: true });
   const mysql = require('mysql2/promise');
   const connection = await mysql.createConnection({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT), user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME, decimalNumbers: true, connectTimeout: 6000 });
@@ -39,6 +39,7 @@ test('MySQL solo lectura: ocho reportes, filtros, totales y aislamiento real de 
   assert.ok(Array.isArray(await repo.products(root)));
   assert.equal((await repo.products({ id_usuario: 999999999, roles: ['VENDEDOR'] })).length, 0);
   const specs = {
+    costos_adquisicion: ["SELECT COUNT(*) n, COALESCE(SUM(dc.subtotal),0) total FROM detalle_compras dc INNER JOIN compras c ON c.id_compra=dc.id_compra WHERE c.estado='CONFIRMADA'", 'subtotal'],
     ventas: ["SELECT COUNT(*) n, COALESCE(SUM(total),0) total FROM ventas", 'total'],
     compras: ["SELECT COUNT(*) n, COALESCE(SUM(total),0) total FROM compras", 'total'],
     existencias: ["SELECT COUNT(*) n, COALESCE(SUM(stock_actual),0) total FROM inventario_sucursal", 'stock_actual'],
@@ -59,6 +60,16 @@ test('MySQL solo lectura: ocho reportes, filtros, totales y aislamiento real de 
       assert.equal((await repo.read(id, {}, { id_usuario: 999999999, roles: ['ADMINISTRADOR'] })).length, 0);
     });
   }
+  await t.test('historial de costos: filtros combinados y valores exactos de detalle_compras', async () => {
+    const [sample] = await connection.query("SELECT dc.id_producto, c.id_proveedor, c.id_sucursal, DATE_FORMAT(c.fecha,'%Y-%m-%d') AS dia FROM detalle_compras dc INNER JOIN compras c ON c.id_compra=dc.id_compra WHERE c.estado='CONFIRMADA' LIMIT 1");
+    if (!sample.length) return;
+    const x = sample[0];
+    const rows = await repo.read('costos_adquisicion', { id_producto: x.id_producto, id_proveedor: x.id_proveedor, id_sucursal: x.id_sucursal, desde: x.dia, hasta: x.dia }, root);
+    const [expected] = await connection.query("SELECT dc.cantidad, dc.costo_unitario, dc.descuento, dc.impuesto, dc.subtotal FROM detalle_compras dc INNER JOIN compras c ON c.id_compra=dc.id_compra WHERE c.estado='CONFIRMADA' AND dc.id_producto=? AND c.id_proveedor=? AND c.id_sucursal=? AND c.fecha>=? AND c.fecha<DATE_ADD(?,INTERVAL 1 DAY) ORDER BY c.fecha DESC,c.id_compra DESC,dc.id_detalle_compra DESC", [x.id_producto,x.id_proveedor,x.id_sucursal,x.dia,x.dia]);
+    assert.deepEqual(rows.map(r => Object.fromEntries(Object.keys(expected[0]).map(k => [k,r[k]]))), expected.map(r => ({...r})));
+    const options = await repo.costOptions({ id_usuario: 999999999, roles: [] });
+    assert.equal(options.length, 0);
+  });
   const [[expected]] = await connection.query("SELECT COUNT(*) n, COALESCE(SUM(monto_base),0) total FROM pagos WHERE estado='APLICADO' AND metodo='EFECTIVO' AND fecha>='2026-10-01' AND fecha<'2026-11-01'");
   const filtered = await repo.read('pagos', { estado: 'APLICADO', metodo: 'EFECTIVO', desde: '2026-10-01', hasta: '2026-10-31' }, root);
   assert.equal(filtered.length, expected.n);

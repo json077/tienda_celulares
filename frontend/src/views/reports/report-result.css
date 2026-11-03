@@ -1,0 +1,123 @@
+.inventory-age-result {
+  min-width: 0;
+  max-width: 100%;
+}
+.inventory-age-result .table-responsive {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.inventory-age-result .management-table {
+  min-width: 92rem;
+  table-layout: auto;
+}
+.inventory-age-result .management-table > :not(caption) > * > * {
+  min-width: 10rem;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  vertical-align: middle;
+}
+.inventory-age-result .management-table th {
+  white-space: normal;
+}
+.inventory-age-result .management-table td:first-child {
+  min-width: 18rem;
+}
+.inventory-age-label {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.3rem;
+  background: var(--cui-secondary-bg);
+}
+.inventory-age-label[data-age='Reciente'] {
+  background: var(--cui-success-bg-subtle);
+  color: var(--cui-success-text-emphasis);
+}
+.inventory-age-label[data-age='Seguimiento'] {
+  background: var(--cui-info-bg-subtle);
+  color: var(--cui-info-text-emphasis);
+}
+.inventory-age-label[data-age='Inventario lento'],
+.inventory-age-label[data-age='Revisar'] {
+  background: var(--cui-warning-bg-subtle);
+  color: var(--cui-warning-text-emphasis);
+}
+/* Only the acquisition cost history uses these widths and compact spacing. */
+.cost-history-result {
+  min-width: 0;
+  max-width: 100%;
+}
+.cost-history-result .table-responsive {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.cost-history-result .management-table {
+  table-layout: auto;
+  min-width: 126rem;
+  width: 100%;
+}
+.cost-history-result .management-table > :not(caption) > * > * {
+  padding: 0.55rem 0.75rem;
+  vertical-align: middle;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.cost-history-result .management-table th {
+  white-space: normal;
+}
+.cost-history-result [data-cost-column='fecha'] {
+  min-width: 10.5rem;
+}
+.cost-history-result [data-cost-column='numero'] {
+  min-width: 12rem;
+}
+.cost-history-result [data-cost-column='sucursal'] {
+  min-width: 10rem;
+}
+.cost-history-result [data-cost-column='proveedor'] {
+  min-width: 15rem;
+}
+.cost-history-result [data-cost-column='producto'] {
+  min-width: 17rem;
+}
+.cost-history-result [data-cost-column='sku'] {
+  min-width: 10rem;
+}
+.cost-history-result [data-cost-column='cantidad'] {
+  min-width: 7.5rem;
+}
+.cost-history-result [data-cost-column='costo_unitario'] {
+  min-width: 12rem;
+}
+.cost-history-result [data-cost-column='descuento'],
+.cost-history-result [data-cost-column='impuesto'] {
+  min-width: 10rem;
+}
+.cost-history-result [data-cost-column='subtotal'] {
+  min-width: 12rem;
+}
+.cost-history-result td:is([data-cost-column='sku'], [data-cost-column='numero']) {
+  white-space: nowrap;
+}
+.cost-history-result
+  td:is(
+    [data-cost-column='producto'],
+    [data-cost-column='proveedor'],
+    [data-cost-column='sucursal']
+  ) {
+  overflow-wrap: break-word;
+}
+/* A bounded label remains useful on desktop; mobile keeps the full scroll area. */
+@media (min-width: 768px) {
+  .cost-history-result [data-cost-column='producto'] {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background-color: var(--cui-table-bg, var(--cui-body-bg));
+    border-right: 1px solid var(--cui-border-color);
+  }
+  .cost-history-result th[data-cost-column='producto'] {
+    z-index: 2;
+    background-color: var(--cui-tertiary-bg);
+  }
+}

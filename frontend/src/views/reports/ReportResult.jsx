@@ -12,6 +12,7 @@ import {
   CTableDataCell,
 } from '@coreui/react'
 import { MetricCards } from '../../components/management/ManagementUI'
+import './report-result.css'
 
 export const reportValue = (value, type) =>
   ['number', 'money'].includes(type)
@@ -22,7 +23,16 @@ export const reportValue = (value, type) =>
     : value
 
 const ReportResult = ({ data }) => (
-  <section aria-label={data.title}>
+  <section
+    aria-label={data.title}
+    className={
+      data.id === 'costos_adquisicion'
+        ? 'cost-history-result'
+        : data.id === 'antiguedad_imei'
+          ? 'inventory-age-result'
+          : undefined
+    }
+  >
     <MetricCards items={data.totals} />
     <CCard className="management-panel mb-4">
       <CCardBody>
@@ -42,7 +52,16 @@ const ReportResult = ({ data }) => (
           <CTableHead>
             <CTableRow>
               {data.columns.map((c) => (
-                <CTableHeaderCell key={c.key} scope="col">
+                <CTableHeaderCell
+                  key={c.key}
+                  scope="col"
+                  data-cost-column={data.id === 'costos_adquisicion' ? c.key : undefined}
+                  className={
+                    data.id === 'costos_adquisicion' && ['money', 'number'].includes(c.type)
+                      ? 'text-end'
+                      : undefined
+                  }
+                >
                   {c.label}
                 </CTableHeaderCell>
               ))}
@@ -54,9 +73,17 @@ const ReportResult = ({ data }) => (
                 {data.columns.map((c) => (
                   <CTableDataCell
                     key={c.key}
+                    data-cost-column={data.id === 'costos_adquisicion' ? c.key : undefined}
                     className={['money', 'number'].includes(c.type) ? 'text-end text-nowrap' : ''}
                   >
-                    {reportValue(row[c.key], c.type)}
+                    {data.currency === 'C$' && c.type === 'money' ? 'C$ ' : ''}
+                    {data.id === 'antiguedad_imei' && c.key === 'clasificacion' ? (
+                      <span className="inventory-age-label" data-age={row[c.key]}>
+                        {row[c.key]}
+                      </span>
+                    ) : (
+                      reportValue(row[c.key], c.type)
+                    )}
                   </CTableDataCell>
                 ))}
               </CTableRow>

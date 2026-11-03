@@ -3,6 +3,19 @@ const col = (key, label, type = 'text') => ({ key, label, type });
 const money = (key, label) => col(key, `${label} (NIO)`, 'money');
 const states = ['CONFIRMADA', 'BORRADOR', 'ANULADA'];
 const definitions = {
+  antiguedad_imei: {
+    title: 'Antigüedad de inventario por IMEI', product: true, dates: false,
+    ageRanges: ['Reciente', 'Seguimiento', 'Inventario lento', 'Revisar', 'No determinada'],
+    note: 'Solo unidades DISPONIBLES de productos serializados activos. Ingreso verificado por un único movimiento COMPRA de la unidad coincidente con su compra confirmada. Sin evidencia suficiente: No determinada. Días calendario según CURRENT_DATE() y la zona horaria de la sesión del servidor de base de datos. Transferencias y devoluciones no reinician la antigüedad. No representa depreciación ni pérdidas.',
+    columns: [col('producto', 'Producto'), col('sku', 'SKU'), col('identificador', 'IMEI / serie'), col('sucursal', 'Sucursal actual'), col('fecha_ingreso', 'Ingreso original'), col('dias', 'Días transcurridos', 'age'), col('clasificacion', 'Clasificación'), col('procedencia', 'Compra / procedencia')],
+    sums: [],
+  },
+  costos_adquisicion: {
+    title: 'Historial de costos de adquisición', product: true, supplier: true, currency: 'C$',
+    note: 'Solo compras CONFIRMADAS. Fecha de compra corresponde a compras.fecha, no a una fecha de confirmación. Los importes son los registrados en detalle_compras; el costo unitario no descuenta descuentos ni incorpora cargos adicionales.',
+    columns: [col('fecha', 'Fecha de compra'), col('numero', 'Referencia de compra'), col('sucursal', 'Sucursal'), col('proveedor', 'Proveedor'), col('producto', 'Producto'), col('sku', 'SKU'), col('cantidad', 'Cantidad comprada', 'number'), col('costo_unitario', 'Costo unitario registrado (C$)', 'money'), col('descuento', 'Descuento de la línea (C$)', 'money'), col('impuesto', 'Impuesto de la línea (C$)', 'money'), col('subtotal', 'Subtotal registrado (C$)', 'money')],
+    sums: [],
+  },
   ventas: { title: 'Ventas', states, columns: [col('numero', 'Venta'), col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('cliente', 'Cliente'), col('tipo_venta', 'Condición'), col('estado', 'Estado'), money('total', 'Total')], sums: ['total'] },
   compras: { title: 'Compras', states, columns: [col('numero', 'Documento'), col('fecha', 'Fecha'), col('sucursal', 'Sucursal'), col('proveedor', 'Proveedor'), col('estado', 'Estado'), money('total', 'Total')], sums: ['total'] },
   existencias: { title: 'Existencias actuales', product: true, dates: false, note: 'Stock actual al consultar; no representa existencias históricas.', columns: [col('sucursal', 'Sucursal'), col('sku', 'SKU'), col('producto', 'Producto'), col('stock_actual', 'Stock actual', 'number'), col('stock_minimo', 'Stock mínimo', 'number')], sums: ['stock_actual'] },

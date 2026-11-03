@@ -106,7 +106,7 @@ const Reports = () => {
         <CCardBody>
           <h2 className="h6 mb-1">Configura tu consulta</h2>
           <p className="small text-body-secondary mb-4">
-            Selecciona uno de los ocho reportes y aplica los filtros de tus sucursales autorizadas.
+            Selecciona un reporte y aplica los filtros de tus sucursales autorizadas.
           </p>
           {error && <CAlert color="danger">{error}</CAlert>}
           {catalog && (
@@ -199,13 +199,56 @@ const Reports = () => {
                       onChange={(e) => set('id_producto', e.target.value)}
                     >
                       <option value="">Todos</option>
-                      {catalog.products.map((p) => (
+                      {(definition?.supplier ? catalog.costProducts : catalog.products).map((p) => (
                         <option key={p.id_producto} value={p.id_producto}>
                           {p.sku} · {p.nombre}
                         </option>
                       ))}
                     </CFormSelect>
                   </CCol>
+                )}
+                {definition?.supplier && (
+                  <CCol md={3}>
+                    <CFormLabel htmlFor="report-supplier">Proveedor</CFormLabel>
+                    <CFormSelect
+                      id="report-supplier"
+                      value={filters.id_proveedor || ''}
+                      onChange={(e) => set('id_proveedor', e.target.value)}
+                    >
+                      <option value="">Todos</option>
+                      {catalog.suppliers.map((supplier) => (
+                        <option key={supplier.id_proveedor} value={supplier.id_proveedor}>
+                          {supplier.nombre}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </CCol>
+                )}
+                {definition?.ageRanges && (
+                  <>
+                    <CCol md={3}>
+                      <CFormLabel htmlFor="report-age">Antigüedad</CFormLabel>
+                      <CFormSelect
+                        id="report-age"
+                        value={filters.antiguedad || ''}
+                        onChange={(e) => set('antiguedad', e.target.value)}
+                      >
+                        <option value="">Todas</option>
+                        {definition.ageRanges.map((range) => (
+                          <option key={range}>{range}</option>
+                        ))}
+                      </CFormSelect>
+                    </CCol>
+                    <CCol md={3}>
+                      <CFormLabel htmlFor="report-imei">IMEI o serie</CFormLabel>
+                      <CFormInput
+                        id="report-imei"
+                        maxLength={80}
+                        value={filters.imei || ''}
+                        onChange={(e) => set('imei', e.target.value)}
+                      />
+                    </CCol>
+                  </>
                 )}
                 {definition?.methods && (
                   <CCol md={3}>
